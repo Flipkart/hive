@@ -206,6 +206,19 @@
     <gson.version>2.2.4</gson.version>
   </properties>
 
+  <distributionManagement>
+    <snapshotRepository>
+      <id>fk-art-snapshot</id>
+      <name>libs-snapshot</name>
+      <url>http://10.85.59.116/artifactory/v1.0/artifacts/libs-snapshots-local</url>
+    </snapshotRepository>
+    <repository>
+      <id>fk-art-release</id>
+      <name>libs-rel</name>
+      <url>http://10.85.59.116/artifactory/v1.0/artifacts/libs-release-local</url>
+    </repository>
+  </distributionManagement>
+
   <repositories>
    <!-- This needs to be removed before checking in-->
     <repository>
