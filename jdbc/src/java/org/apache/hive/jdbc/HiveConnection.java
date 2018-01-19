@@ -48,6 +48,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpRequestRetryHandler;
 import org.apache.http.client.ServiceUnavailableRetryStrategy;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
@@ -115,6 +116,9 @@ import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
+
+import static org.apache.hive.jdbc.Utils.JdbcConnectionParams.CLIENT_SO_TIMEOUT_MILLIS;
+import static org.apache.hive.jdbc.Utils.JdbcConnectionParams.CLIENT_SO_TIMEOUT_MILLIS_DEFAULT;
 
 /**
  * HiveConnection.
@@ -528,7 +532,19 @@ public class HiveConnection implements java.sql.Connection {
         throw new SQLException(msg, " 08S01", e);
       }
     }
-    return httpClientBuilder.build();
+
+    final int timeout;
+    if (connParams.getSessionVars().containsKey(CLIENT_SO_TIMEOUT_MILLIS)) {
+      timeout = Integer.parseInt(connParams.getSessionVars().get(CLIENT_SO_TIMEOUT_MILLIS));
+    } else {
+      timeout = CLIENT_SO_TIMEOUT_MILLIS_DEFAULT;
+    }
+    final RequestConfig config = RequestConfig.custom()
+        .setConnectTimeout(timeout)
+        .setConnectionRequestTimeout(timeout)
+        .setSocketTimeout(timeout).build();
+
+    return httpClientBuilder.setDefaultRequestConfig(config).build();
   }
 
   /**
