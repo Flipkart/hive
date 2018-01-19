@@ -18,6 +18,9 @@
 package org.apache.hive.service.cli.operation;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -54,6 +57,19 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Sets;
 
 public abstract class Operation {
+  // Constants of the key strings for the log4j ThreadContext.
+  public static final String SESSIONID_LOG_KEY = "sessionId";
+  public static final String QUERYID_LOG_KEY = "queryId";
+  public static final String HOST_IP;
+
+  static {
+    try {
+      HOST_IP = InetAddress.getLocalHost().getHostAddress();
+    } catch (UnknownHostException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   protected final HiveSession parentSession;
   private volatile OperationState state = OperationState.INITIALIZED;
   private volatile MetricsScope currentStateScope;
@@ -331,7 +347,7 @@ public abstract class Operation {
   }
 
   protected HiveSQLException toSQLException(String prefix, CommandProcessorResponse response) {
-    HiveSQLException ex = new HiveSQLException(prefix + ": " + response.getErrorMessage(),
+    HiveSQLException ex = new HiveSQLException(prefix + "{Failed in " + HOST_IP + "} : " + response.getErrorMessage(),
         response.getSQLState(), response.getResponseCode());
     if (response.getException() != null) {
       ex.initCause(response.getException());
