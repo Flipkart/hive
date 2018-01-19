@@ -1966,6 +1966,8 @@ public class Driver implements CommandProcessor {
       executionError = true;
       throw e;
     } catch (Throwable e) {
+      final String errorTrace = org.apache.hadoop.util.StringUtils.stringifyException(e);
+      LOG.warn(errorTrace);
       executionError = true;
       if (isInterrupted()) {
         return handleInterruption("during query execution: \n" + e.getMessage());
@@ -1987,8 +1989,7 @@ public class Driver implements CommandProcessor {
       }
       SQLState = "08S01";
       downstreamError = e;
-      console.printError(errorMessage + "\n"
-          + org.apache.hadoop.util.StringUtils.stringifyException(e));
+      console.printError(errorMessage + "\n" + errorTrace);
       return (12);
     } finally {
       // Trigger query hooks after query completes its execution.
