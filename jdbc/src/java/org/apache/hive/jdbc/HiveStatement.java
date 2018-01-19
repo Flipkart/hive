@@ -454,7 +454,11 @@ public class HiveStatement implements java.sql.Statement {
     return statusResp;
   }
 
-  TGetOperationStatusResp waitForOperationToComplete() throws SQLException {
+  public TGetOperationStatusResp waitForOperationToComplete() throws SQLException {
+    return waitForOperationToComplete(0);
+  }
+
+  public TGetOperationStatusResp waitForOperationToComplete(long sleepTimeMillis) throws SQLException {
     TGetOperationStatusReq statusReq = new TGetOperationStatusReq(stmtHandle);
     boolean shouldGetProgressUpdate = inPlaceUpdateStream != InPlaceUpdateStream.NO_OP;
     statusReq.setGetProgressUpdate(shouldGetProgressUpdate);
@@ -469,8 +473,14 @@ public class HiveStatement implements java.sql.Statement {
     // Poll on the operation status, till the operation is complete
     while (!isOperationComplete) {
       statusResp = refreshStatus(statusReq);
+      try {
+        if (sleepTimeMillis > 0) {
+          Thread.sleep(sleepTimeMillis);
+        }
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
     }
-
     /*
       we set progress bar to be completed when hive query execution has completed
     */
