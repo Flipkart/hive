@@ -43,8 +43,10 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpRequestRetryHandler;
 import org.apache.http.client.ServiceUnavailableRetryStrategy;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
+import org.apache.http.config.SocketConfig;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.ssl.DefaultHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
@@ -108,6 +110,8 @@ import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
+
+import static org.apache.hive.jdbc.Utils.JdbcConnectionParams.CLIENT_SO_TIMEOUT;
 
 /**
  * HiveConnection.
@@ -486,7 +490,14 @@ public class HiveConnection implements java.sql.Connection {
         throw new SQLException(msg, " 08S01", e);
       }
     }
-    return httpClientBuilder.build();
+
+    final int timeout = Integer.parseInt(connParams.getSessionVars().get(CLIENT_SO_TIMEOUT));
+    final RequestConfig config = RequestConfig.custom()
+        .setConnectTimeout(timeout)
+        .setConnectionRequestTimeout(timeout)
+        .setSocketTimeout(timeout).build();
+
+    return httpClientBuilder.setDefaultRequestConfig(config).build();
   }
 
   /**

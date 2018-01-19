@@ -95,6 +95,7 @@ public class Utils {
     // We're deprecating the name and placement of this in the parsed map (from hive conf vars to
     // hive session vars).
     static final String TRANSPORT_MODE_DEPRECATED = "hive.server2.transport.mode";
+    static final String CLIENT_SO_TIMEOUT = "hive.client.read.socket.timeout";
     public static final String TRANSPORT_MODE = "transportMode";
     // We're deprecating the name and placement of this in the parsed map (from hive conf vars to
     // hive session vars).
