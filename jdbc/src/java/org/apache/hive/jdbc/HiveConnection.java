@@ -46,7 +46,6 @@ import org.apache.http.client.ServiceUnavailableRetryStrategy;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
-import org.apache.http.config.SocketConfig;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.ssl.DefaultHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
@@ -111,7 +110,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static org.apache.hive.jdbc.Utils.JdbcConnectionParams.CLIENT_SO_TIMEOUT;
+import static org.apache.hive.jdbc.Utils.JdbcConnectionParams.CLIENT_SO_TIMEOUT_MILLIS;
+import static org.apache.hive.jdbc.Utils.JdbcConnectionParams.CLIENT_SO_TIMEOUT_MILLIS_DEFAULT;
 
 /**
  * HiveConnection.
@@ -491,7 +491,12 @@ public class HiveConnection implements java.sql.Connection {
       }
     }
 
-    final int timeout = Integer.parseInt(connParams.getSessionVars().get(CLIENT_SO_TIMEOUT));
+    final int timeout;
+    if (connParams.getSessionVars().containsKey(CLIENT_SO_TIMEOUT_MILLIS)) {
+      timeout = Integer.parseInt(connParams.getSessionVars().get(CLIENT_SO_TIMEOUT_MILLIS));
+    } else {
+      timeout = CLIENT_SO_TIMEOUT_MILLIS_DEFAULT;
+    }
     final RequestConfig config = RequestConfig.custom()
         .setConnectTimeout(timeout)
         .setConnectionRequestTimeout(timeout)
