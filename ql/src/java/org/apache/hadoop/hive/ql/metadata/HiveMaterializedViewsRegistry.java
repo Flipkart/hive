@@ -31,10 +31,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import org.apache.calcite.adapter.druid.ComplexMetric;
 import org.apache.calcite.adapter.druid.DruidQuery;
 import org.apache.calcite.adapter.druid.DruidSchema;
 import org.apache.calcite.adapter.druid.DruidTable;
-import org.apache.calcite.adapter.druid.LocalInterval;
+import org.joda.time.Interval;
 import org.apache.calcite.jdbc.JavaTypeFactoryImpl;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptMaterialization;
@@ -183,7 +186,9 @@ public final class HiveMaterializedViewsRegistry {
               " ignored; error parsing original query");
       return null;
     }
-    RelOptMaterialization materialization = new RelOptMaterialization(tableRel, queryRel, null);
+    List<String> emptyList = Lists.newArrayList();
+    RelOptMaterialization materialization = new RelOptMaterialization(tableRel, queryRel, null,
+        emptyList);
     cq.put(vk, materialization);
     if (LOG.isDebugEnabled()) {
       LOG.debug("Cached materialized view for rewriting: " + tableRel.getTable().getQualifiedName());
@@ -307,10 +312,11 @@ public final class HiveMaterializedViewsRegistry {
         }
         metrics.add(field.getName());
       }
-      List<LocalInterval> intervals = Arrays.asList(DruidTable.DEFAULT_INTERVAL);
+      List<Interval> intervals = Arrays.asList(DruidTable.DEFAULT_INTERVAL);
 
       DruidTable druidTable = new DruidTable(new DruidSchema(address, address, false),
-          dataSource, RelDataTypeImpl.proto(rowType), metrics, DruidTable.DEFAULT_TIMESTAMP_COLUMN, intervals);
+          dataSource, RelDataTypeImpl.proto(rowType), metrics, DruidTable.DEFAULT_TIMESTAMP_COLUMN, intervals,
+          Maps.<String, List<ComplexMetric>>newHashMap(), Maps.<String, SqlTypeName>newHashMap());
       final TableScan scan = new HiveTableScan(cluster, cluster.traitSetOf(HiveRelNode.CONVENTION),
           optTable, viewTable.getTableName(), null, false, false);
       tableRel = DruidQuery.create(cluster, cluster.traitSetOf(HiveRelNode.CONVENTION),

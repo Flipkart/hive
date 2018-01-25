@@ -51,6 +51,7 @@ import org.apache.calcite.rex.RexOver;
 import org.apache.calcite.rex.RexPatternFieldRef;
 import org.apache.calcite.rex.RexRangeRef;
 import org.apache.calcite.rex.RexSubQuery;
+import org.apache.calcite.rex.RexTableInputRef;
 import org.apache.calcite.rex.RexUtil;
 import org.apache.calcite.rex.RexVisitor;
 import org.apache.calcite.rex.RexVisitorImpl;
@@ -1073,6 +1074,11 @@ public class HiveCalciteUtil {
     @Override
     public Boolean visitSubQuery(RexSubQuery subQuery) {
       // it seems that it is not used by anything.
+      return false;
+    }
+
+    @Override
+    public Boolean visitTableInputRef(RexTableInputRef rexTableInputRef) {
       return false;
     }
 

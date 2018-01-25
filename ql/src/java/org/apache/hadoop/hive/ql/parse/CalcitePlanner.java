@@ -43,15 +43,16 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.google.common.collect.Maps;
 import org.antlr.runtime.ClassicToken;
 import org.antlr.runtime.CommonToken;
 import org.antlr.runtime.tree.TreeVisitor;
 import org.antlr.runtime.tree.TreeVisitorAction;
+import org.apache.calcite.adapter.druid.ComplexMetric;
 import org.apache.calcite.adapter.druid.DruidQuery;
 import org.apache.calcite.adapter.druid.DruidRules;
 import org.apache.calcite.adapter.druid.DruidSchema;
 import org.apache.calcite.adapter.druid.DruidTable;
-import org.apache.calcite.adapter.druid.LocalInterval;
 import org.apache.calcite.config.CalciteConnectionConfigImpl;
 import org.apache.calcite.config.CalciteConnectionProperty;
 import org.apache.calcite.plan.RelOptCluster;
@@ -258,6 +259,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import org.apache.calcite.config.CalciteConnectionConfig;
+import org.joda.time.Interval;
 
 public class CalcitePlanner extends SemanticAnalyzer {
 
@@ -1450,7 +1452,7 @@ public class CalcitePlanner extends SemanticAnalyzer {
                         (RelOptHiveTable) viewScan.getTable(), viewScan.getTable().getQualifiedName().get(0),
                         null, false, false);
                   }
-                  return new RelOptMaterialization(newViewScan, materialization.queryRel, null);
+                  return new RelOptMaterialization(newViewScan, materialization.queryRel, null, Lists.<String>newArrayList());
                 }
               }
           );
@@ -2300,10 +2302,11 @@ public class CalcitePlanner extends SemanticAnalyzer {
             }
             metrics.add(field.getName());
           }
-          List<LocalInterval> intervals = Arrays.asList(DruidTable.DEFAULT_INTERVAL);
+          List<Interval> intervals = Arrays.asList(DruidTable.DEFAULT_INTERVAL);
 
           DruidTable druidTable = new DruidTable(new DruidSchema(address, address, false),
-                  dataSource, RelDataTypeImpl.proto(rowType), metrics, DruidTable.DEFAULT_TIMESTAMP_COLUMN, intervals);
+                  dataSource, RelDataTypeImpl.proto(rowType), metrics, DruidTable.DEFAULT_TIMESTAMP_COLUMN, intervals,
+              Maps.<String, List<ComplexMetric>>newHashMap(), Maps.<String, SqlTypeName>newHashMap());
           final TableScan scan = new HiveTableScan(cluster, cluster.traitSetOf(HiveRelNode.CONVENTION),
                   optTable, null == tableAlias ? tabMetaData.getTableName() : tableAlias,
                   getAliasId(tableAlias, qb), HiveConf.getBoolVar(conf,
@@ -3366,7 +3369,7 @@ public class CalcitePlanner extends SemanticAnalyzer {
 
         w = cluster.getRexBuilder().makeOver(calciteAggFnRetType, calciteAggFn, calciteAggFnArgs,
             partitionKeys, ImmutableList.<RexFieldCollation> copyOf(orderKeys), lowerBound,
-            upperBound, isRows, true, false);
+            upperBound, isRows, true, false, hiveAggInfo.m_distinct);
       } else {
         // TODO: Convert to Semantic Exception
         throw new RuntimeException("Unsupported window Spec");
