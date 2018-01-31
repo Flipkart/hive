@@ -318,7 +318,17 @@ public class BytesColumnVector extends ColumnVector {
 
     // Handle repeating case
     if (isRepeating) {
-      output.setVal(0, vector[0], start[0], length[0]);
+      final byte[] srcBuffer;
+      if (vector[0] == null) {
+        if (start[0] == 0 && length[0] == 0) {
+          srcBuffer = new byte[0];
+        } else {
+          throw new RuntimeException("isRepeating is true, vector[0] is null but start[0] is " + start[0] + " and length[0] is " + length[0]);
+        }
+      } else {
+        srcBuffer = vector[0];
+      }
+      output.setVal(0, srcBuffer, start[0], length[0]);
       output.isNull[0] = isNull[0];
       output.isRepeating = true;
       return;
