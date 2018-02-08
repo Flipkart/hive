@@ -294,7 +294,7 @@ valueRowConstructor
 @init { gParent.pushMsg("value row constructor", state); }
 @after { gParent.popMsg(state); }
     :
-    expressionsInParenthesis[false] -> ^(TOK_VALUE_ROW expressionsInParenthesis)
+    LPAREN precedenceUnaryPrefixExpression (COMMA precedenceUnaryPrefixExpression)* RPAREN -> ^(TOK_VALUE_ROW precedenceUnaryPrefixExpression+)
     ;
 
 valuesTableConstructor
