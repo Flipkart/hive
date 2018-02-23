@@ -20,11 +20,6 @@ import java.util.Map;
  * Created by kartik.bhatia on 22/02/18.
  */
 public class QueueFetcher {
-    public static final String GRINGOTTS_URL = "http://10.47.6.66/billingOrg/user";
-    public static final String CLIENT_ID = "QAAS";
-    public static final String CLIENT_SECRET_KEY = "423de2b0-cc97-439d-a3f9-673e76d7bbea";
-    public static final String IRONBANK_URL = "http://10.47.6.114:11111/queue/";
-    public static final String ADHOC_DEFAULT = "adhoc";
     public static final String SSH_TTY_PROP_KEY = "SSH_TTY";
     private static Optional<String> queueToBeSet;
     public static ObjectMapper mapper;
@@ -35,7 +30,7 @@ public class QueueFetcher {
         queueToBeSet = Optional.absent();
     }
 
-    public static String getQueueForLoggedInUser() throws IOException, InterruptedException {
+    public static String getQueueForLoggedInUser(FDPGatewayBoxConfiguration fdpGatewayBoxConfiguration) throws IOException, InterruptedException {
         if(queueToBeSet.isPresent()){
             Log.info("Queue ha already been fetched once which is {}", queueToBeSet.get());
             return queueToBeSet.get();
@@ -44,27 +39,27 @@ public class QueueFetcher {
         String userId = getLoggedInUser();
         Log.info("Logged in user is {}", userId);
         if(userId!=null){
-            String billingOrg = getBillingOrgFromUserID(userId);
+            String billingOrg = getBillingOrgFromUserID(fdpGatewayBoxConfiguration, userId);
             Log.info("Got billing org {}", billingOrg);
             if(billingOrg==null){
-                Log.info("No billing org found for user!, executing in default queue i.e {}", ADHOC_DEFAULT);
-                return ADHOC_DEFAULT;
+                Log.info("No billing org found for user!, executing in default queue i.e {}", fdpGatewayBoxConfiguration.getAdhocDefaultQueue());
+                return fdpGatewayBoxConfiguration.getAdhocDefaultQueue();
             }
-            String queueName = getQueueForBillingOrg(billingOrg);
+            String queueName = getQueueForBillingOrg(fdpGatewayBoxConfiguration, billingOrg);
             Log.info("Got queue name is {}", queueName);
             if(queueName==null){
-                Log.info("No queue found for billing org!, executing in default queue i.e {}", ADHOC_DEFAULT);
-                return ADHOC_DEFAULT;
+                Log.info("No queue found for billing org!, executing in default queue i.e {}", fdpGatewayBoxConfiguration.getAdhocDefaultQueue());
+                return fdpGatewayBoxConfiguration.getAdhocDefaultQueue();
             }
             return queueName;
 
         }
-        return ADHOC_DEFAULT;
+        return fdpGatewayBoxConfiguration.getAdhocDefaultQueue();
     }
 
-    private static String getQueueForBillingOrg(String billingOrg) throws IOException {
+    private static String getQueueForBillingOrg(FDPGatewayBoxConfiguration fdpGatewayBoxConfiguration, String billingOrg) throws IOException {
         CloseableHttpClient client = HttpClientBuilder.create().build();
-        HttpGet request = new HttpGet(IRONBANK_URL + billingOrg);
+        HttpGet request = new HttpGet(fdpGatewayBoxConfiguration.getIronbankUrl() + billingOrg);
         Log.info("Requesting from {}", request.getURI());
         HttpResponse response = client.execute(request);
         BufferedReader rd = new BufferedReader(
@@ -83,12 +78,12 @@ public class QueueFetcher {
         return null;
     }
 
-    private static String getBillingOrgFromUserID(String userId) throws IOException {
+    private static String getBillingOrgFromUserID(FDPGatewayBoxConfiguration fdpGatewayBoxConfiguration, String userId) throws IOException {
         CloseableHttpClient client = HttpClientBuilder.create().build();
-        HttpGet request = new HttpGet(GRINGOTTS_URL);
+        HttpGet request = new HttpGet(fdpGatewayBoxConfiguration.getGringottsUrl());
         request.addHeader("x-authenticated-user", userId);
-        request.addHeader("X-Client-Id", CLIENT_ID);
-        request.addHeader("X-Client-Secret", CLIENT_SECRET_KEY);
+        request.addHeader("X-Client-Id", fdpGatewayBoxConfiguration.getClientId());
+        request.addHeader("X-Client-Secret", fdpGatewayBoxConfiguration.getClientSecretKey());
         Log.info("Requesting billing org for user {}, using url {}", userId, request.getURI());
         HttpResponse response = client.execute(request);
         BufferedReader rd = new BufferedReader(
