@@ -20,6 +20,8 @@ package org.apache.hadoop.hive.ql.processors;
 
 import static org.apache.commons.lang.StringUtils.isBlank;
 
+import java.io.File;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,6 +29,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import com.google.common.base.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.hadoop.hive.conf.HiveConf;
@@ -39,6 +42,12 @@ import org.apache.hadoop.hive.ql.session.SessionState;
  *
  */
 public final class CommandProcessorFactory {
+
+  public static final String PROPERTIES_FILE_LOCATION = "/etc/default/fdp-properties.json";
+  public static final String MAPRED_QUEUE_PROP = "mapreduce.job.queuename";
+  public static final String TEZ_QUEUE_PROP = "tez.queue.name";
+  public static final String BOX_TYPE = "boxType";
+  public static final String GATEWAY = "gateway";
 
   private CommandProcessorFactory() {
     // prevent instantiation
@@ -121,6 +130,8 @@ public final class CommandProcessorFactory {
       if (conf == null) {
         return new Driver();
       }
+      LOG.info("Beginning to set user level properties!");
+      setUserSpecificProperties(conf);
       Driver drv = mapDrivers.get(conf);
       if (drv == null) {
         drv = new Driver();
@@ -131,6 +142,64 @@ public final class CommandProcessorFactory {
       drv.init();
       return drv;
     }
+  }
+
+  private static void setUserSpecificProperties(HiveConf conf) {
+    File propFile = new File(PROPERTIES_FILE_LOCATION);
+    if(propFile.exists() && !propFile.isDirectory()){
+      try {
+        LOG.info("Found file at {}, fetching map from it", PROPERTIES_FILE_LOCATION);
+        Map<String, Object> fileContents = getMapFromFile(propFile);
+        LOG.info("File fetch from {} succeeded", PROPERTIES_FILE_LOCATION);
+        if(fileContents.containsKey(BOX_TYPE) && fileContents.get(BOX_TYPE).equals(GATEWAY)){
+          LOG.info("Found box type to be {}, proceeding with setting of properties", fileContents.get(BOX_TYPE));
+          setPropertiesHelper(fileContents, conf);
+        }
+        else{
+          LOG.info("This is not gateway box, setting nothing!");
+          return;
+        }
+      } catch (IOException e) {
+        LOG.error("Couldn't get Map from JSON file!");
+      }
+    }
+    else {
+      LOG.info("File not found at {} to set properties! Continuing normal execution", PROPERTIES_FILE_LOCATION);
+    }
+  }
+
+  private static void setPropertiesHelper(Map<String, Object> fileContents, HiveConf conf) {
+    try {
+      String queue = QueueFetcher.getQueueForLoggedInUser();
+      Optional<String> mapredQueueOptional = Optional.fromNullable(conf.get(MAPRED_QUEUE_PROP));
+      Optional<String> tezQueueOptional = Optional.fromNullable(conf.get(TEZ_QUEUE_PROP));
+      if(!mapredQueueOptional.isPresent() || mapredQueueOptional.get().equals("default")){
+        LOG.info("Setting mapred queue to {} as it is not set by user", queue);
+        conf.set(MAPRED_QUEUE_PROP, queue);
+      }
+      if(!tezQueueOptional.isPresent()){
+        LOG.info("Setting TEZ queue to {} as it is not set by user", queue);
+        conf.set(TEZ_QUEUE_PROP, queue);
+      }
+      if(!conf.get(MAPRED_QUEUE_PROP).equals(queue)){
+        LOG.info("You have set invalid queue name {} for mapred job, this will be ignored and set to apt org queue {}",
+                conf.get(MAPRED_QUEUE_PROP), queue);
+        conf.set(MAPRED_QUEUE_PROP, queue);
+      }
+      if(!conf.get(TEZ_QUEUE_PROP).equals(queue)){
+        LOG.info("You have set invalid queue name {} for tez job, this will be ignored and set to apt org queue {}",
+                conf.get(TEZ_QUEUE_PROP), queue);
+        conf.set(TEZ_QUEUE_PROP, queue);
+      }
+    } catch (IOException e) {
+      LOG.info("Fetching of queue failed due to {}", e.getMessage());
+    } catch (InterruptedException e) {
+      LOG.info("Fetching of queue failed due to {}", e.getMessage());
+    }
+  }
+
+  private static Map<String, Object> getMapFromFile(File propFile) throws IOException {
+    return QueueFetcher.mapper.readValue(propFile, Map.class);
   }
 
   public static void clean(HiveConf conf) {
