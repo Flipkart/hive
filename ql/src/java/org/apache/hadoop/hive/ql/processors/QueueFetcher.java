@@ -33,7 +33,7 @@ public class QueueFetcher {
 
     public static String getQueueForLoggedInUser(FDPGatewayBoxConfiguration fdpGatewayBoxConfiguration) throws IOException, InterruptedException {
         if(queueToBeSet.isPresent()){
-            Log.info("Queue ha already been fetched once which is {}", queueToBeSet.get());
+            Log.info("Queue has already been fetched once which is {}", queueToBeSet.get());
             return queueToBeSet.get();
         }
         Log.info("Setting queue for the first time!");
@@ -62,17 +62,9 @@ public class QueueFetcher {
         CloseableHttpClient client = HttpClientBuilder.create().build();
         HttpGet request = new HttpGet(fdpGatewayBoxConfiguration.getIronbankUrl() + billingOrg);
         Log.info("Requesting from {}", request.getURI());
-        HttpResponse response = client.execute(request);
-        BufferedReader rd = new BufferedReader(
-                new InputStreamReader(response.getEntity().getContent()));
-
-        StringBuffer result = new StringBuffer();
-        String line = "";
-        while ((line = rd.readLine()) != null) {
-            result.append(line);
-        }
+        String result = getResponseString(client, request);
         Log.info("Got response {}", result);
-        Map<String, Map<String, String>> billingOrgsQueues = mapper.readValue(result.toString(), TypeFactory.defaultInstance().constructType(Map.class));
+        Map<String, Map<String, String>> billingOrgsQueues = mapper.readValue(result, TypeFactory.defaultInstance().constructType(Map.class));
         if(billingOrgsQueues!=null && billingOrgsQueues.get("priority_to_queue_name_map")!=null){
             return billingOrgsQueues.get("priority_to_queue_name_map").get("3");
         }
@@ -86,17 +78,9 @@ public class QueueFetcher {
         request.addHeader("X-Client-Id", fdpGatewayBoxConfiguration.getClientId());
         request.addHeader("X-Client-Secret", fdpGatewayBoxConfiguration.getClientSecretKey());
         Log.info("Requesting billing org for user {}, using url {}", userId, request.getURI());
-        HttpResponse response = client.execute(request);
-        BufferedReader rd = new BufferedReader(
-                new InputStreamReader(response.getEntity().getContent()));
-
-        StringBuffer result = new StringBuffer();
-        String line = "";
-        while ((line = rd.readLine()) != null) {
-            result.append(line);
-        }
+        String result = getResponseString(client, request);
         Log.info("Got response {}", result);
-        List<String> billingOrgs = mapper.readValue(result.toString(), TypeFactory.defaultInstance().constructType(List.class));
+        List<String> billingOrgs = mapper.readValue(result, TypeFactory.defaultInstance().constructType(List.class));
         if(billingOrgs!=null && !billingOrgs.isEmpty()){
             Collections.sort(billingOrgs);
             //Get first org in sorted order till user selecting billing org is not self serve
@@ -106,6 +90,19 @@ public class QueueFetcher {
             Log.info("No billing org found for user!");
             return null;
         }
+    }
+
+    private static String getResponseString(CloseableHttpClient client, HttpGet request) throws IOException {
+        HttpResponse response = client.execute(request);
+        BufferedReader rd = new BufferedReader(
+                new InputStreamReader(response.getEntity().getContent()));
+
+        StringBuffer result = new StringBuffer();
+        String line = "";
+        while ((line = rd.readLine()) != null) {
+            result.append(line);
+        }
+        return result.toString();
     }
 
     private static String getLoggedInUser() throws IOException, InterruptedException {
@@ -123,7 +120,4 @@ public class QueueFetcher {
         return null;
     }
 
-    public static void main(String[] args) throws IOException, InterruptedException {
-        System.out.println(getLoggedInUser());
-    }
 }
