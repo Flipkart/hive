@@ -20,6 +20,8 @@ package org.apache.hadoop.hive.ql.processors;
 
 import static org.apache.commons.lang.StringUtils.isBlank;
 
+import java.io.File;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,6 +29,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import com.google.common.base.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.hadoop.hive.conf.HiveConf;
@@ -39,6 +42,14 @@ import org.apache.hadoop.hive.ql.session.SessionState;
  *
  */
 public final class CommandProcessorFactory {
+
+  public static final String PROPERTIES_FILE_LOCATION = "/etc/default/fdp-properties.json";
+  public static final String MAPRED_QUEUE_PROP = "mapreduce.job.queuename";
+  public static final String TEZ_QUEUE_PROP = "tez.queue.name";
+  public static final String GATEWAY = "gateway";
+
+  public static final Logger LOG = LoggerFactory.getLogger(CommandProcessorFactory.class);
+  public static final SessionState.LogHelper console = new SessionState.LogHelper(LOG);
 
   private CommandProcessorFactory() {
     // prevent instantiation
@@ -108,7 +119,7 @@ public final class CommandProcessorFactory {
     }
   }
 
-  static Logger LOG = LoggerFactory.getLogger(CommandProcessorFactory.class);
+
   public static CommandProcessor get(String[] cmd, HiveConf conf)
       throws SQLException {
     CommandProcessor result = getForHiveCommand(cmd, conf);
@@ -121,6 +132,8 @@ public final class CommandProcessorFactory {
       if (conf == null) {
         return new Driver();
       }
+      LOG.info("Beginning to set user level properties!");
+      setUserSpecificProperties(conf);
       Driver drv = mapDrivers.get(conf);
       if (drv == null) {
         drv = new Driver();
@@ -131,6 +144,64 @@ public final class CommandProcessorFactory {
       drv.init();
       return drv;
     }
+  }
+
+  private static void setUserSpecificProperties(HiveConf conf) {
+    File propFile = new File(PROPERTIES_FILE_LOCATION);
+    if(propFile.exists() && !propFile.isDirectory()){
+      try {
+        LOG.info("Found file at {}, fetching map from it", PROPERTIES_FILE_LOCATION);
+        FDPGatewayBoxConfiguration fdpConfiguration = getMapFromFile(propFile);
+        LOG.info("File fetch from {} succeeded with properties", PROPERTIES_FILE_LOCATION, fdpConfiguration);
+        if(fdpConfiguration.getBoxType().equals(GATEWAY)){
+          LOG.info("Found box type to be {}, proceeding with setting of properties", fdpConfiguration.getBoxType());
+          setPropertiesHelper(fdpConfiguration, conf);
+        }
+        else{
+          LOG.info("This is not gateway box, setting nothing!");
+          return;
+        }
+      } catch (Throwable e) {
+        LOG.error(e.getMessage());
+      }
+    }
+    else {
+      LOG.info("File not found at {} to set properties! Continuing normal execution", PROPERTIES_FILE_LOCATION);
+    }
+  }
+
+  private static void setPropertiesHelper(FDPGatewayBoxConfiguration fdpGatewayBoxConfiguration, HiveConf conf) {
+    try {
+      String queue = QueueFetcher.getQueueForLoggedInUser(fdpGatewayBoxConfiguration);
+      Optional<String> mapredQueueOptional = Optional.fromNullable(conf.get(MAPRED_QUEUE_PROP));
+      Optional<String> tezQueueOptional = Optional.fromNullable(conf.get(TEZ_QUEUE_PROP));
+      if(!mapredQueueOptional.isPresent() || mapredQueueOptional.get().equals("default")){
+        LOG.info("Setting mapred queue to {} as it is not set by user", queue);
+        conf.set(MAPRED_QUEUE_PROP, queue);
+      }
+      if(!tezQueueOptional.isPresent()){
+        LOG.info("Setting TEZ queue to {} as it is not set by user", queue);
+        conf.set(TEZ_QUEUE_PROP, queue);
+      }
+      if(!conf.get(MAPRED_QUEUE_PROP).equals(queue)){
+        console.printError(String.format("You have set invalid queue name %s for mapred job, this will be ignored and set to apt org queue %s",
+                conf.get(MAPRED_QUEUE_PROP), queue));
+        conf.set(MAPRED_QUEUE_PROP, queue);
+      }
+      if(!conf.get(TEZ_QUEUE_PROP).equals(queue)){
+        console.printError(String.format("You have set invalid queue name %s for tez job, this will be ignored and set to apt org queue %s",
+                conf.get(TEZ_QUEUE_PROP), queue));
+        conf.set(TEZ_QUEUE_PROP, queue);
+      }
+    } catch (IOException e) {
+      LOG.info("Fetching of queue failed due to {}", e.getMessage());
+    } catch (InterruptedException e) {
+      LOG.info("Fetching of queue failed due to {}", e.getMessage());
+    }
+  }
+
+  private static FDPGatewayBoxConfiguration getMapFromFile(File propFile) throws IOException {
+    return QueueFetcher.mapper.readValue(propFile, FDPGatewayBoxConfiguration.class);
   }
 
   public static void clean(HiveConf conf) {
