@@ -181,23 +181,13 @@ public final class CommandProcessorFactory {
   }
 
   private static void setJobName(HiveConf conf) throws IOException, InterruptedException {
-    Optional<String> mapredJobNameOptional = Optional.fromNullable(conf.get(MAPRED_JOB_NAME));
-    Optional<String> hiveQueryNameOptional = Optional.fromNullable(conf.get(HIVE_QUERY_NAME));
-    String loggedInuser = QueueFetcher.getLoggedInUser();
-    String mapredJobName = loggedInuser, hiveQueryName = loggedInuser;
-    if(mapredJobNameOptional.isPresent()){
-      LOG.info("Found prop {} to be set as {}, appending username {}", MAPRED_JOB_NAME, mapredJobNameOptional.get(), loggedInuser);
-      mapredJobName = checkExistingNameAndAppendUserIfNotAppended(mapredJobNameOptional.get(), loggedInuser);
-
-    }
-    if(hiveQueryNameOptional.isPresent()){
-      LOG.info("Found prop {} to be set as {}, appending username {}", HIVE_QUERY_NAME, mapredJobNameOptional.get(), loggedInuser);
-      hiveQueryName = checkExistingNameAndAppendUserIfNotAppended(hiveQueryNameOptional.get(), loggedInuser);
-    }
+    String queryId = conf.getVar(HiveConf.ConfVars.HIVEQUERYID);
+    String loggedInUser = QueueFetcher.getLoggedInUser();
+    String mapredJobName = queryId + "-" + loggedInUser;
     LOG.info("Setting property {} as {}", MAPRED_JOB_NAME, mapredJobName);
     conf.set(MAPRED_JOB_NAME, mapredJobName);
-    LOG.info("Setting property {} as {}", HIVE_QUERY_NAME, hiveQueryName);
-    conf.set(HIVE_QUERY_NAME, hiveQueryName);
+    LOG.info("Setting property {} as {}", HIVE_QUERY_NAME, mapredJobName);
+    conf.set(HIVE_QUERY_NAME, mapredJobName);
   }
 
   /**
