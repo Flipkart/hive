@@ -50,7 +50,7 @@ public final class CommandProcessorFactory {
 
   public static final Logger LOG = LoggerFactory.getLogger(CommandProcessorFactory.class);
   public static final SessionState.LogHelper console = new SessionState.LogHelper(LOG);
-  public static final String MAPRED_JOB_NAME = "mapred.job.name";
+  public static final String MAPRED_JOB_NAME = "mapreduce.job.name";
   public static final String HIVE_QUERY_NAME = "hive.query.name";
 
   private CommandProcessorFactory() {
