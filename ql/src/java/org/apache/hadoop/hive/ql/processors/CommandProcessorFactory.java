@@ -50,6 +50,8 @@ public final class CommandProcessorFactory {
 
   public static final Logger LOG = LoggerFactory.getLogger(CommandProcessorFactory.class);
   public static final SessionState.LogHelper console = new SessionState.LogHelper(LOG);
+  public static final String MAPRED_JOB_NAME = "mapreduce.job.name";
+  public static final String HIVE_QUERY_NAME = "hive.query.name";
 
   private CommandProcessorFactory() {
     // prevent instantiation
@@ -173,7 +175,22 @@ public final class CommandProcessorFactory {
     }
   }
 
-  private static void setPropertiesHelper(FDPGatewayBoxConfiguration fdpGatewayBoxConfiguration, HiveConf conf) throws BillingOrgNotFoundException{
+  private static void setPropertiesHelper(FDPGatewayBoxConfiguration fdpGatewayBoxConfiguration, HiveConf conf) throws BillingOrgNotFoundException, IOException, InterruptedException {
+    setQueue(fdpGatewayBoxConfiguration, conf);
+    setJobName(conf);
+  }
+
+  private static void setJobName(HiveConf conf) throws IOException, InterruptedException {
+    String queryId = conf.getVar(HiveConf.ConfVars.HIVEQUERYID);
+    String loggedInUser = QueueFetcher.getLoggedInUser();
+    String mapredJobName = queryId + "-" + loggedInUser;
+    LOG.info("Setting property {} as {}", MAPRED_JOB_NAME, mapredJobName);
+    conf.set(MAPRED_JOB_NAME, mapredJobName);
+    LOG.info("Setting property {} as {}", HIVE_QUERY_NAME, mapredJobName);
+    conf.set(HIVE_QUERY_NAME, mapredJobName);
+  }
+
+  private static void setQueue(FDPGatewayBoxConfiguration fdpGatewayBoxConfiguration, HiveConf conf) throws BillingOrgNotFoundException {
     try {
       String queue = QueueFetcher.getQueueForLoggedInUser(fdpGatewayBoxConfiguration);
       if(queue==null){
