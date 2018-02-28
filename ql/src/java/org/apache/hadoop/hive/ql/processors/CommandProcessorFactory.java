@@ -190,22 +190,6 @@ public final class CommandProcessorFactory {
     conf.set(HIVE_QUERY_NAME, mapredJobName);
   }
 
-  /**
-   * Since multiple commands can be used in session we need to check if we have already set the logged in user name
-   * @param existingPropertyVal
-   * @param loggedInuser
-   * @return
-     */
-  private static String checkExistingNameAndAppendUserIfNotAppended(String existingPropertyVal, String loggedInuser) {
-    String[] splitOfJobName = existingPropertyVal.split("-");
-    if(splitOfJobName[splitOfJobName.length -1].equals(loggedInuser)){
-      return existingPropertyVal;
-    }
-    else {
-      return existingPropertyVal + "-" + loggedInuser;
-    }
-  }
-
   private static void setQueue(FDPGatewayBoxConfiguration fdpGatewayBoxConfiguration, HiveConf conf) throws BillingOrgNotFoundException {
     try {
       String queue = QueueFetcher.getQueueForLoggedInUser(fdpGatewayBoxConfiguration);
