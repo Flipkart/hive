@@ -27,6 +27,7 @@ import org.antlr.runtime.tree.CommonTree;
 import org.apache.hadoop.hive.ql.optimizer.calcite.translator.ASTBuilder;
 import org.apache.hadoop.hive.ql.parse.CalcitePlanner.ASTSearcher;
 
+import java.io.Closeable;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -61,8 +62,42 @@ import com.google.common.base.Preconditions;
 public final class ParseUtils {
   /** Parses the Hive query. */
   private static final Logger LOG = LoggerFactory.getLogger(ParseUtils.class);
+  private static final int PARSE_TIME_SEC_DEFAULT = 60 * 30;
+  private static final String PARSING_TIMEOUT_KEY = "parser.timeoutSec";
   public static ASTNode parse(String command) throws ParseException {
     return parse(command, null);
+  }
+
+  static class Timer implements Runnable, Closeable{
+    private final long timeToExecuteSec;
+    private final Thread threadToInterrupt;
+    private volatile boolean shouldInterrupt = true;
+
+    Timer(long timeToExecuteSec, Thread threadToInterrupt) {
+      this.threadToInterrupt = threadToInterrupt;
+      this.timeToExecuteSec = timeToExecuteSec;
+      if (Thread.currentThread().getName().endsWith(" main")) {
+        new Thread(this).start();
+      }
+    }
+
+    public void close() {
+      shouldInterrupt = false;
+    }
+
+    @Override
+    public void run() {
+      try {
+        Thread.sleep(timeToExecuteSec * 1000);
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+      /** A cli case, safe to kill the main thread**/
+      if (shouldInterrupt) {
+        System.err.println("Parsing is taking more than the configured {" + timeToExecuteSec + "s}, killing the thread");
+        threadToInterrupt.stop();
+      }
+    }
   }
 
   /** Parses the Hive query. */
@@ -73,11 +108,14 @@ public final class ParseUtils {
   /** Parses the Hive query. */
   public static ASTNode parse(
       String command, Context ctx, String viewFullyQualifiedName) throws ParseException {
-    ParseDriver pd = new ParseDriver();
-    ASTNode tree = pd.parse(command, ctx, viewFullyQualifiedName);
-    tree = findRootNonNullToken(tree);
-    handleSetColRefs(tree);
-    return tree;
+    final long timeoutInSec = ctx.getConf().getInt(PARSING_TIMEOUT_KEY, PARSE_TIME_SEC_DEFAULT);
+    try(final Timer timer = new Timer(timeoutInSec, Thread.currentThread())) {
+      ParseDriver pd = new ParseDriver();
+      ASTNode tree = pd.parse(command, ctx, viewFullyQualifiedName);
+      tree = findRootNonNullToken(tree);
+      handleSetColRefs(tree);
+      return tree;
+    }
   }
 
   /**
