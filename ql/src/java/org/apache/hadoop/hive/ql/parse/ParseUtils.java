@@ -84,7 +84,7 @@ public final class ParseUtils {
   public static ASTNode parse(
       final String command, final Context ctx, final String viewFullyQualifiedName) throws ParseException {
     final ParseDriver pd = new ParseDriver();
-    final long timeoutInSec;
+    final int timeoutInSec;
     if (ctx != null && ctx.getConf() != null) {
       timeoutInSec = ctx.getConf().getInt(PARSING_TIMEOUT_KEY, PARSE_TIME_SEC_DEFAULT);
     } else {
@@ -101,8 +101,26 @@ public final class ParseUtils {
       tree = findRootNonNullToken(tree);
       handleSetColRefs(tree);
       return tree;
-    } catch (Throwable e) {
+    } catch (java.util.concurrent.TimeoutException e) {
       throw new TimeoutException(Lists.<ParseError>newArrayList());
+    } catch (InterruptedException | ExecutionException e) {
+      throw new ParsingInterruptedException(Lists.<ParseError>newArrayList(), e);
+    }
+  }
+
+  static class ParsingInterruptedException extends ParseException {
+
+    private final Throwable throwable;
+
+    public ParsingInterruptedException(ArrayList<ParseError> errors, Throwable e) {
+      super(errors);
+      this.throwable = e;
+    }
+
+    @Override
+    public String getMessage() {
+      return "The query is taking more time to parse!! Please simplify your query " +
+          "(reduce complex nesting statements) :: " + throwable.getMessage();
     }
   }
 
