@@ -41,7 +41,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import org.antlr.runtime.tree.Tree;
 import org.apache.hadoop.hive.common.type.HiveDecimal;
@@ -68,8 +67,8 @@ import com.google.common.base.Preconditions;
 public final class ParseUtils {
   /** Parses the Hive query. */
   private static final Logger LOG = LoggerFactory.getLogger(ParseUtils.class);
-  private static final int PARSE_TIME_SEC_DEFAULT = 60 * 30;
-  private static final String PARSING_TIMEOUT_KEY = "parser.timeoutSec";
+  private static final int PARSE_TIME_SEC_DEFAULT = 10;
+  static final String PARSING_TIMEOUT_KEY = "parser.timeoutSec";
 
   public static ASTNode parse(String command) throws ParseException {
     return parse(command, null);
