@@ -19,6 +19,7 @@
 package org.apache.hadoop.hive.ql.parse;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayDeque;
@@ -29,6 +30,12 @@ import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 import java.util.Stack;
+import java.util.Optional;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import org.antlr.runtime.tree.CommonTree;
 import org.antlr.runtime.tree.Tree;
 import org.apache.hadoop.hive.common.type.HiveDecimal;
@@ -58,6 +65,9 @@ import org.slf4j.LoggerFactory;
 public final class ParseUtils {
   /** Parses the Hive query. */
   private static final Logger LOG = LoggerFactory.getLogger(ParseUtils.class);
+  private static final int PARSE_TIME_SEC_DEFAULT = 10;
+  static final String PARSING_TIMEOUT_KEY = "parser.timeoutSec";
+
   public static ASTNode parse(String command) throws ParseException {
     return parse(command, null);
   }
@@ -69,12 +79,59 @@ public final class ParseUtils {
 
   /** Parses the Hive query. */
   public static ASTNode parse(
-      String command, Context ctx, String viewFullyQualifiedName) throws ParseException {
-    ParseDriver pd = new ParseDriver();
-    ASTNode tree = pd.parse(command, ctx, viewFullyQualifiedName);
-    tree = findRootNonNullToken(tree);
-    handleSetColRefs(tree);
-    return tree;
+      final String command, final Context ctx, final String viewFullyQualifiedName) throws ParseException {
+    final ParseDriver pd = new ParseDriver();
+    final int timeoutInSec;
+    if (ctx != null && ctx.getConf() != null) {
+      timeoutInSec = ctx.getConf().getInt(PARSING_TIMEOUT_KEY, PARSE_TIME_SEC_DEFAULT);
+    } else {
+      timeoutInSec = PARSE_TIME_SEC_DEFAULT;
+    }
+    final ExecutorService service = Executors.newSingleThreadExecutor();
+    try {
+      ASTNode tree = service.submit(new Callable<ASTNode>() {
+        @Override
+        public ASTNode call() throws Exception {
+          return pd.parse(command, ctx, viewFullyQualifiedName);
+        }
+      }).get(timeoutInSec, TimeUnit.SECONDS);
+      tree = findRootNonNullToken(tree);
+      handleSetColRefs(tree);
+      return tree;
+    } catch (java.util.concurrent.TimeoutException e) {
+      throw new TimeoutException(Lists.<ParseError>newArrayList());
+    } catch (InterruptedException | ExecutionException e) {
+      throw new ParsingInterruptedException(Lists.<ParseError>newArrayList(), e);
+    } finally {
+      Optional.ofNullable(service).ifPresent(ExecutorService::shutdown);
+    }
+  }
+
+  static class ParsingInterruptedException extends ParseException {
+
+    private final Throwable throwable;
+
+    public ParsingInterruptedException(ArrayList<ParseError> errors, Throwable e) {
+      super(errors);
+      this.throwable = e;
+    }
+
+    @Override
+    public String getMessage() {
+      return "Parsing is interrupted due to : " +  throwable.getMessage();
+    }
+  }
+
+  static class TimeoutException extends ParseException {
+
+    public TimeoutException(ArrayList<ParseError> errors) {
+      super(errors);
+    }
+
+    @Override
+    public String getMessage() {
+      return "The query is taking more time to parse!! Please simplify your query (reduce complex nesting statements)";
+    }
   }
 
   /**
