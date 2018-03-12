@@ -36,6 +36,8 @@ public class FDPAuth {
     static {
         refresher = new Refresher();
         refresherThread = new Thread(refresher);
+        refresherThread.setName("refresher thread");
+        refresherThread.start();
     }
 
     private FDPAuth() {
@@ -46,6 +48,7 @@ public class FDPAuth {
             if (null == fdpAuth) {
                 fdpAuth = new FDPAuth();
                 fdpAuth.setConfig(getConfigService(bucketFile).getConfig(FDPAuthConfig.class));
+                log.info("FdpAuth instance is {}", fdpAuth);
                 return fdpAuth;
             }
             return fdpAuth;
@@ -102,8 +105,10 @@ public class FDPAuth {
     }
 
 
-    public static void main(String[] args) {
-        FDPAuth instance = FDPAuth.getInstance(BUCKET_FILE);
+    public static void main(String[] args) throws InterruptedException {
+        FDPAuth instance = FDPAuth.getInstance("/Users/kartik.bhatia/work/hive/ql/src/test/org/apache/hadoop/hive/ql/processors/fdpauth/bucketfile");
+        System.out.println(instance);
+        Thread.currentThread().sleep(60000);
         System.out.println(instance);
     }
 
@@ -118,21 +123,23 @@ public class FDPAuth {
     public static class Refresher implements Runnable {
 
         //Keeping refresh interval as 2 minutes
-        public static final int REFRESH_INTERVAL = 120000;
+        public static final int REFRESH_INTERVAL = 30000;
 
         @Override
         public void run() {
             try {
                 Thread.sleep(REFRESH_INTERVAL);
+                log.info("Trying to refresh fdp auth instance");
                 synchronized (LOCK) {
                     fdpAuth = null;
                 }
-                FDPAuth.getInstance(FDPAuth.BUCKET_FILE);
+                FDPAuth.getInstance(BUCKET_FILE);
 
             } catch (Throwable e) {
-                log.error("Couldn't refresh auth instance!");
+                log.error("Couldn't refresh auth instance! Error {}", e.getMessage());
             }
 
         }
     }
+
 }
