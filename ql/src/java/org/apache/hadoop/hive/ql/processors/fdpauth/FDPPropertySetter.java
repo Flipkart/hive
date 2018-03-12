@@ -24,7 +24,6 @@ public class FDPPropertySetter {
     public static final FDPAuth fdpAuth = FDPAuth.getInstance(FDPAuth.BUCKET_FILE);
 
     public static void setUserSpecificProperties(HiveConf conf) {
-        conf.set("launchedFrom", fdpAuth.getRequestingIp());
         if (!isUserSpecificPropertiesToBeSetForRequestigIp()) {
             log.info("Request coming from ip {} is a whitelisted ip, not setting any property");
             return;
