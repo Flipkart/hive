@@ -119,8 +119,7 @@ public final class ParseUtils {
 
     @Override
     public String getMessage() {
-      return "The query is taking more time to parse!! Please simplify your query " +
-          "(reduce complex nesting statements) :: " + throwable.getMessage();
+      return "Parsing is interrupted due to : " +  throwable.getMessage();
     }
   }
 
