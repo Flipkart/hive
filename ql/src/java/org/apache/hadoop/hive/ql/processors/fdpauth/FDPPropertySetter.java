@@ -61,7 +61,7 @@ public class FDPPropertySetter {
     private static void setJobName(FDPAuth fdpAuth, HiveConf conf) throws IOException, InterruptedException {
         String queryId = conf.getVar(HiveConf.ConfVars.HIVEQUERYID);
         String loggedInUser = QueueFetcher.getLoggedInUser(fdpAuth, conf);
-        String mapredJobName = queryId + "-" + loggedInUser;
+        String mapredJobName = queryId + "-" + fdpAuth.getRequestingIp() + "-" + loggedInUser;
         log.info("Setting property {} as {}", MAPRED_JOB_NAME, mapredJobName);
         conf.set(MAPRED_JOB_NAME, mapredJobName);
         log.info("Setting property {} as {}", HIVE_QUERY_NAME, mapredJobName);
