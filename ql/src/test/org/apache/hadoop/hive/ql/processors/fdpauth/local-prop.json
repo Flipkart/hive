@@ -1,0 +1,13 @@
+{
+  "fdpauth.boxType" : "GATEWAY",
+  "fdpauth.whiteListedIps" : "10.33.14.168",
+  "fdpauth.enabled" : true,
+  "fdpauth.gringottsUrl" : "http://10.47.6.66/billingOrg/user",
+  "fdpauth.ironbankUrl" : "http://10.47.6.114:11111/queue/",
+  "fdpauth.clientId" : "QAAS",
+  "fdpauth.clientSecretKey" : "423de2b0-cc97-439d-a3f9-673e76d7bbea",
+  "fdpauth.adhocDefaultQueue" : "adhoc",
+  "fdpauth.queueCacheExpire" : 60,
+  "fdpauth.queueCacheLimit" : 100,
+  "fdpauth.queueNotFoundErrorMessage" : ".  Please provide FDP your mapping by visiting the link : http://fdp.fkinternal.com/access/self?selectedResourceType=REPORT&namespaceResourceType=REPORT&show_org_ns=1"
+}
