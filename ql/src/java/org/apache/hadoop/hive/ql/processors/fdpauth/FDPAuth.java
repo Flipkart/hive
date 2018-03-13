@@ -136,7 +136,6 @@ public class FDPAuth {
                     synchronized (LOCK) {
                         fdpAuth = null;
                     }
-                    FDPAuth.getInstance(BUCKET_FILE);
 
                 } catch (Throwable e) {
                     log.error("Couldn't refresh auth instance! Error {}", e.getMessage());

@@ -21,7 +21,7 @@ public class FDPPropertySetter {
     public static final String HIVE_QUERY_NAME = "hive.query.name";
     public static final Logger LOG = LoggerFactory.getLogger(FDPPropertySetter.class);
     public static final SessionState.LogHelper console = new SessionState.LogHelper(LOG);
-    public static final FDPAuth fdpAuth = FDPAuth.getInstance(FDPAuth.BUCKET_FILE);
+    public static final String DELIMITER = "---";
 
     public static void setUserSpecificProperties(HiveConf conf) {
         if (!isUserSpecificPropertiesToBeSetForRequestigIp()) {
@@ -29,13 +29,13 @@ public class FDPPropertySetter {
             return;
         }
 
-        if (!fdpAuth.getConfig().isEnabled()) {
+        if (!FDPAuth.getInstance(FDPAuth.BUCKET_FILE).getConfig().isEnabled()) {
             log.info("FDP Auth is not enabled! Normal Execution flow will continue");
             return;
         }
-        log.info("Setting user specific property for {}", fdpAuth.getRequestingIp());
+        log.info("Setting user specific property for {}", FDPAuth.getInstance(FDPAuth.BUCKET_FILE).getRequestingIp());
         try {
-            setPropertiesHelper(fdpAuth, conf);
+            setPropertiesHelper(FDPAuth.getInstance(FDPAuth.BUCKET_FILE), conf);
         } catch (BillingOrgNotFoundException e) {
             log.error("Couldn't find billing org, exiting with error");
             throw new RuntimeException(e.getMessage());
@@ -46,8 +46,8 @@ public class FDPPropertySetter {
 
     @VisibleForTesting
     protected static boolean isUserSpecificPropertiesToBeSetForRequestigIp() {
-        String requestingIp = fdpAuth.getRequestingIp();
-        if (fdpAuth.getSetOfWhiteListedIps().contains(requestingIp)) {
+        String requestingIp = FDPAuth.getInstance(FDPAuth.BUCKET_FILE).getRequestingIp();
+        if (FDPAuth.getInstance(FDPAuth.BUCKET_FILE).getSetOfWhiteListedIps().contains(requestingIp)) {
             return false;
         }
         return true;
@@ -61,7 +61,7 @@ public class FDPPropertySetter {
     private static void setJobName(FDPAuth fdpAuth, HiveConf conf) throws IOException, InterruptedException {
         String queryId = conf.getVar(HiveConf.ConfVars.HIVEQUERYID);
         String loggedInUser = QueueFetcher.getLoggedInUser(fdpAuth, conf);
-        String mapredJobName = queryId + "-" + fdpAuth.getRequestingIp() + "-" + loggedInUser;
+        String mapredJobName = queryId + DELIMITER + fdpAuth.getRequestingIp() + DELIMITER + loggedInUser;
         log.info("Setting property {} as {}", MAPRED_JOB_NAME, mapredJobName);
         conf.set(MAPRED_JOB_NAME, mapredJobName);
         log.info("Setting property {} as {}", HIVE_QUERY_NAME, mapredJobName);
