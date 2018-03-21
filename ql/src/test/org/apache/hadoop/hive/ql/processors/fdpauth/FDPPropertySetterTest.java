@@ -4,15 +4,23 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.File;
+import java.io.FileWriter;
+
 /**
  * Created by kartik.bhatia on 12/03/18.
  */
 public class FDPPropertySetterTest {
     private FDPAuth fdpAuth;
-    private static final String BUCKET_FILE = "/Users/kartik.bhatia/work/hive/ql/src/test/org/apache/hadoop/hive/ql/processors/fdpauth/bucketfile";
+
     @Before
     public void setUp() throws Exception {
-        fdpAuth = FDPAuth.getInstance(BUCKET_FILE);
+        File file = new File(FDPAuth.BUCKET_FILE);
+        file.createNewFile();
+        FileWriter writer = new FileWriter(file);
+        writer.write("\"/Users/kartik.bhatia/work/hive/ql/src/test/org/apache/hadoop/hive/ql/processors/fdpauth/local-prop.json\"");
+        writer.close();
+        fdpAuth = FDPAuth.getInstance();
     }
 
     @Test

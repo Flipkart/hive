@@ -112,7 +112,7 @@ public class CliDriver {
   }
 
   public int processCmd(String cmd) {
-    FDPAuth.getInstance(FDPAuth.BUCKET_FILE).setCurrentIp(HostDetails.current().getHostAddress());
+    FDPAuth.getInstance().setCurrentIp(HostDetails.current().getHostAddress());
     CliSessionState ss = (CliSessionState) SessionState.get();
     ss.setLastCommand(cmd);
 
