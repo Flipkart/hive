@@ -33,13 +33,13 @@ public class QueueFetcher {
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         queueCache = CacheBuilder
                 .newBuilder()
-                .expireAfterWrite(FDPAuth.getInstance(FDPAuth.BUCKET_FILE).getConfig().getQueueCacheExpire(), TimeUnit.SECONDS)
-                .maximumSize(FDPAuth.getInstance(FDPAuth.BUCKET_FILE).getConfig().getQueueCacheLimit())
+                .expireAfterWrite(FDPAuth.getInstance().getConfig().getQueueCacheExpire(), TimeUnit.SECONDS)
+                .maximumSize(FDPAuth.getInstance().getConfig().getQueueCacheLimit())
                 .build(
                         new CacheLoader<String, Optional<String>>() {
                             @Override
                             public Optional<String> load(String user) throws Exception {
-                                return Optional.fromNullable(getQueueForUser(FDPAuth.getInstance(FDPAuth.BUCKET_FILE), user));
+                                return Optional.fromNullable(getQueueForUser(FDPAuth.getInstance(), user));
                             }
                         }
                 );
