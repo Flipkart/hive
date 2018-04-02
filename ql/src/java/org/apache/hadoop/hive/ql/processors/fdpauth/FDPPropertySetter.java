@@ -29,13 +29,13 @@ public class FDPPropertySetter {
             return;
         }
 
-        if (!FDPAuth.getInstance(FDPAuth.BUCKET_FILE).getConfig().isEnabled()) {
+        if (!FDPAuth.getInstance().getConfig().isEnabled()) {
             log.info("FDP Auth is not enabled! Normal Execution flow will continue");
             return;
         }
-        log.info("Setting user specific property for {}", FDPAuth.getInstance(FDPAuth.BUCKET_FILE).getRequestingIp());
+        log.info("Setting user specific property for {}", FDPAuth.getInstance().getRequestingIp());
         try {
-            setPropertiesHelper(FDPAuth.getInstance(FDPAuth.BUCKET_FILE), conf);
+            setPropertiesHelper(FDPAuth.getInstance(), conf);
         } catch (BillingOrgNotFoundException e) {
             log.error("Couldn't find billing org, exiting with error");
             throw new RuntimeException(e.getMessage());
@@ -46,8 +46,8 @@ public class FDPPropertySetter {
 
     @VisibleForTesting
     protected static boolean isUserSpecificPropertiesToBeSetForRequestigIp() {
-        String requestingIp = FDPAuth.getInstance(FDPAuth.BUCKET_FILE).getRequestingIp();
-        if (FDPAuth.getInstance(FDPAuth.BUCKET_FILE).getSetOfWhiteListedIps().contains(requestingIp)) {
+        String requestingIp = FDPAuth.getInstance().getRequestingIp();
+        if (FDPAuth.getInstance().getSetOfWhiteListedIps().contains(requestingIp)) {
             return false;
         }
         return true;
