@@ -349,6 +349,46 @@ public class OrcInputFormat implements InputFormat<NullWritable, OrcStruct>,
     return result;
   }
 
+
+  public static boolean[] genIncludedColumnsNew(TypeDescription readerSchema,
+                                             List<Integer> included, Configuration conf) {
+
+    boolean[] result = new boolean[readerSchema.getMaximumId() + 1];
+    if (included == null) {
+      Arrays.fill(result, true);
+      return result;
+    }
+    result[0] = true;
+    List<String> nestedColumnPaths = new ArrayList<>(ColumnProjectionUtils.getNestedColumnPaths(conf));
+    for(String column : nestedColumnPaths)
+    {
+      String[] columnpath = column.split("\\.");
+      result = setIncludeForNestedColumns(columnpath,0,readerSchema,result);
+    }
+    return result;
+  }
+
+  private static boolean[] setIncludeForNestedColumns(String[] columnPath,int postion,TypeDescription readerSchema,boolean[] include )
+  {
+    if(postion == (columnPath.length-1) && readerSchema.getChildren() != null)
+    {
+      for(int col = readerSchema.getId(); col <= readerSchema.getMaximumId(); ++col) {
+        include[col] = true;
+      }
+    }
+    else if(postion == (columnPath.length-1) && readerSchema.getChildren() == null)
+    {
+       include[readerSchema.getId()] = true;
+    }
+    else {
+      String columnName = columnPath[postion];
+      int columnID = readerSchema.getFieldNames().indexOf(columnName);
+      TypeDescription childSchema = readerSchema.getChildren().get(columnID);
+      include = setIncludeForNestedColumns(columnPath,++postion,childSchema,include);
+      include[childSchema.getId()] = true;
+    }
+    return include;
+  }
   /**
    * Reverses genIncludedColumns; produces the table columns indexes from ORC included columns.
    * @param readerSchema The ORC reader schema for the table.
@@ -397,7 +437,7 @@ public class OrcInputFormat implements InputFormat<NullWritable, OrcStruct>,
                                              Configuration conf) {
      if (!ColumnProjectionUtils.isReadAllColumns(conf)) {
       List<Integer> included = ColumnProjectionUtils.getReadColumnIDs(conf);
-      return genIncludedColumns(readerSchema, included);
+      return genIncludedColumnsNew(readerSchema, included, conf);
     } else {
       return null;
     }
