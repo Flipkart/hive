@@ -350,7 +350,7 @@ public class OrcInputFormat implements InputFormat<NullWritable, OrcStruct>,
   }
 
 
-  public static boolean[] genIncludedColumnsNew(TypeDescription readerSchema,
+  public static boolean[] genIncludedColumns(TypeDescription readerSchema,
                                              List<Integer> included, Configuration conf) {
 
     boolean[] result = new boolean[readerSchema.getMaximumId() + 1];
@@ -358,25 +358,32 @@ public class OrcInputFormat implements InputFormat<NullWritable, OrcStruct>,
       Arrays.fill(result, true);
       return result;
     }
-    result[0] = true;
+
     List<String> nestedColumnPaths = new ArrayList<>(ColumnProjectionUtils.getNestedColumnPaths(conf));
+
+    if(nestedColumnPaths.size() == 0) {
+      return  genIncludedColumns(readerSchema,included);
+    }
+
+    result[0] = true;
     for(String column : nestedColumnPaths)
     {
       String[] columnpath = column.split("\\.");
       result = setIncludeForNestedColumns(columnpath,0,readerSchema,result);
     }
+
     return result;
   }
 
   private static boolean[] setIncludeForNestedColumns(String[] columnPath,int postion,TypeDescription readerSchema,boolean[] include )
   {
-    if(postion == (columnPath.length-1) && readerSchema.getChildren() != null)
+    if(postion == (columnPath.length) && readerSchema.getChildren() != null)
     {
       for(int col = readerSchema.getId(); col <= readerSchema.getMaximumId(); ++col) {
         include[col] = true;
       }
     }
-    else if(postion == (columnPath.length-1) && readerSchema.getChildren() == null)
+    else if(postion == (columnPath.length) && readerSchema.getChildren() == null)
     {
        include[readerSchema.getId()] = true;
     }
@@ -437,7 +444,7 @@ public class OrcInputFormat implements InputFormat<NullWritable, OrcStruct>,
                                              Configuration conf) {
      if (!ColumnProjectionUtils.isReadAllColumns(conf)) {
       List<Integer> included = ColumnProjectionUtils.getReadColumnIDs(conf);
-      return genIncludedColumnsNew(readerSchema, included, conf);
+      return genIncludedColumns(readerSchema, included, conf);
     } else {
       return null;
     }
