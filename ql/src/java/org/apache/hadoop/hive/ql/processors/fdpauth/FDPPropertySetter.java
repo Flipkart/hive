@@ -2,9 +2,12 @@ package org.apache.hadoop.hive.ql.processors.fdpauth;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
+import com.google.common.base.Strings;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.ql.session.SessionState;
+import org.apache.hadoop.mapreduce.MRJobConfig;
+import org.apache.hadoop.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,7 +20,6 @@ import java.io.IOException;
 public class FDPPropertySetter {
     public static final String MAPRED_QUEUE_PROP = "mapreduce.job.queuename";
     public static final String TEZ_QUEUE_PROP = "tez.queue.name";
-    public static final String MAPRED_JOB_NAME = "mapreduce.job.name";
     public static final String HIVE_QUERY_NAME = "hive.query.name";
     public static final Logger LOG = LoggerFactory.getLogger(FDPPropertySetter.class);
     public static final SessionState.LogHelper console = new SessionState.LogHelper(LOG);
@@ -61,9 +63,17 @@ public class FDPPropertySetter {
     private static void setJobName(FDPAuth fdpAuth, HiveConf conf) throws IOException, InterruptedException {
         String queryId = conf.getVar(HiveConf.ConfVars.HIVEQUERYID);
         String loggedInUser = QueueFetcher.getLoggedInUser(fdpAuth, conf);
-        String mapredJobName = queryId + DELIMITER + fdpAuth.getRequestingIp() + DELIMITER + loggedInUser;
-        log.info("Setting property {} as {}", MAPRED_JOB_NAME, mapredJobName);
-        conf.set(MAPRED_JOB_NAME, mapredJobName);
+        String stage = conf.get(MRJobConfig.WORKFLOW_NODE_NAME);
+        String mapredJobName = null;
+        if(!Strings.isNullOrEmpty(stage)) {
+            mapredJobName = queryId + DELIMITER + fdpAuth.getRequestingIp() + DELIMITER
+                    + stage + DELIMITER + loggedInUser;
+        }
+        else {
+            mapredJobName = queryId + DELIMITER + fdpAuth.getRequestingIp() + DELIMITER + loggedInUser;
+        }
+        log.info("Setting property {} as {}", MRJobConfig.JOB_NAME, mapredJobName);
+        conf.set(MRJobConfig.JOB_NAME, mapredJobName);
         log.info("Setting property {} as {}", HIVE_QUERY_NAME, mapredJobName);
         conf.set(HIVE_QUERY_NAME, mapredJobName);
     }
