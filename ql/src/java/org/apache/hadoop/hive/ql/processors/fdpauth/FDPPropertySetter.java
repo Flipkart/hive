@@ -67,7 +67,7 @@ public class FDPPropertySetter {
             loggedInUser = QueueFetcher.getLoggedInUser(fdpAuth, conf);
         } catch (IOException | InterruptedException e) {
             log.error("Couldn't fetch logged in user due to !" + e.getMessage());
-            throw new RuntimeException();
+            throw new RuntimeException(e.getMessage());
         }
         String mapredJobName = null;
         if(!Strings.isNullOrEmpty(stage)) {
