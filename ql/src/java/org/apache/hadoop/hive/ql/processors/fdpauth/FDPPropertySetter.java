@@ -25,25 +25,30 @@ public class FDPPropertySetter {
     public static final SessionState.LogHelper console = new SessionState.LogHelper(LOG);
     public static final String DELIMITER = "---";
 
-    public static void setUserSpecificProperties(HiveConf conf) {
-        if (!isUserSpecificPropertiesToBeSetForRequestigIp()) {
-            log.info("Request coming from ip {} is a whitelisted ip, not setting any property");
-            return;
-        }
-
-        if (!FDPAuth.getInstance().getConfig().isEnabled()) {
-            log.info("FDP Auth is not enabled! Normal Execution flow will continue");
-            return;
-        }
+    public static void setUserSpecificQueue(HiveConf conf) {
+        if (!customisedPropsToBeSet()) return;
         log.info("Setting user specific property for {}", FDPAuth.getInstance().getRequestingIp());
         try {
-            setPropertiesHelper(FDPAuth.getInstance(), conf);
+            setQueue(FDPAuth.getInstance(), conf);
         } catch (BillingOrgNotFoundException e) {
             log.error("Couldn't find billing org, exiting with error");
             throw new RuntimeException(e.getMessage());
         } catch (Throwable e) {
             log.error(e.getMessage());
         }
+    }
+
+    public static boolean customisedPropsToBeSet() {
+        if (!isUserSpecificPropertiesToBeSetForRequestigIp()) {
+            log.info("Request coming from ip {} is a whitelisted ip, not setting any property");
+            return false;
+        }
+
+        if (!FDPAuth.getInstance().getConfig().isEnabled()) {
+            log.info("FDP Auth is not enabled! Normal Execution flow will continue");
+            return false;
+        }
+        return true;
     }
 
     @VisibleForTesting
@@ -55,15 +60,15 @@ public class FDPPropertySetter {
         return true;
     }
 
-    private static void setPropertiesHelper(FDPAuth fdpAuth, HiveConf conf) throws BillingOrgNotFoundException, IOException, InterruptedException {
-        setQueue(fdpAuth, conf);
-        setJobName(fdpAuth, conf);
-    }
-
-    private static void setJobName(FDPAuth fdpAuth, HiveConf conf) throws IOException, InterruptedException {
+    public static void setJobName(FDPAuth fdpAuth, HiveConf conf, String stage) {
         String queryId = conf.getVar(HiveConf.ConfVars.HIVEQUERYID);
-        String loggedInUser = QueueFetcher.getLoggedInUser(fdpAuth, conf);
-        String stage = conf.get(MRJobConfig.WORKFLOW_NODE_NAME);
+        String loggedInUser = null;
+        try {
+            loggedInUser = QueueFetcher.getLoggedInUser(fdpAuth, conf);
+        } catch (IOException | InterruptedException e) {
+            log.error("Couldn't fetch logged in user due to !" + e.getMessage());
+            throw new RuntimeException();
+        }
         String mapredJobName = null;
         if(!Strings.isNullOrEmpty(stage)) {
             mapredJobName = queryId + DELIMITER + fdpAuth.getRequestingIp() + DELIMITER

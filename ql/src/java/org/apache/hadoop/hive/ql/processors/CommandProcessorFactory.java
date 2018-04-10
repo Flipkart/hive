@@ -57,7 +57,7 @@ public final class CommandProcessorFactory {
   public static CommandProcessor getForHiveCommand(String[] cmd, HiveConf conf)
     throws SQLException {
     LOG.info("Beginning to set user level properties!");
-    FDPPropertySetter.setUserSpecificProperties(conf);
+    FDPPropertySetter.setUserSpecificQueue(conf);
     return getForHiveCommandInternal(cmd, conf, false);
   }
 

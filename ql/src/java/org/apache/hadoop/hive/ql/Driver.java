@@ -106,6 +106,8 @@ import org.apache.hadoop.hive.ql.plan.HiveOperation;
 import org.apache.hadoop.hive.ql.plan.TableDesc;
 import org.apache.hadoop.hive.ql.processors.CommandProcessor;
 import org.apache.hadoop.hive.ql.processors.CommandProcessorResponse;
+import org.apache.hadoop.hive.ql.processors.fdpauth.FDPAuth;
+import org.apache.hadoop.hive.ql.processors.fdpauth.FDPPropertySetter;
 import org.apache.hadoop.hive.ql.security.authorization.AuthorizationUtils;
 import org.apache.hadoop.hive.ql.security.authorization.HiveAuthorizationProvider;
 import org.apache.hadoop.hive.ql.security.authorization.plugin.HiveOperationType;
@@ -2156,8 +2158,10 @@ public class Driver implements CommandProcessor {
       SessionState.get().getHiveHistory().startTask(queryId, tsk, tsk.getClass().getName());
     }
     if (tsk.isMapRedTask() && !(tsk instanceof ConditionalTask)) {
-      if (noName) {
-        conf.set(MRJobConfig.JOB_NAME, jobname + "(" + tsk.getId() + ")");
+      //ENTRY POINT FOR SETTING JOB NAME . HERE WE SHOULD SET OUR REQUIRED JOB NAME
+      if (noName || FDPPropertySetter.customisedPropsToBeSet()) {
+        FDPPropertySetter.setJobName(FDPAuth.getInstance(), conf, tsk.getId());
+//        conf.set(MRJobConfig.JOB_NAME, jobname + "(" + tsk.getId() + ")");
       }
       conf.set("mapreduce.workflow.node.name", tsk.getId());
       Utilities.setWorkflowAdjacencies(conf, plan);
