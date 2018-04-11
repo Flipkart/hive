@@ -2160,7 +2160,7 @@ public class Driver implements CommandProcessor {
     if (tsk.isMapRedTask() && !(tsk instanceof ConditionalTask)) {
       //ENTRY POINT FOR SETTING JOB NAME . HERE WE SHOULD SET OUR REQUIRED JOB NAME
       if (noName || FDPPropertySetter.customisedPropsToBeSet()) {
-        FDPPropertySetter.setJobName(FDPAuth.getInstance(), conf, tsk.getId());
+        FDPPropertySetter.setJobName(FDPAuth.getInstance(), conf, tsk.getId(), jobs);
 //        conf.set(MRJobConfig.JOB_NAME, jobname + "(" + tsk.getId() + ")");
       }
       conf.set("mapreduce.workflow.node.name", tsk.getId());

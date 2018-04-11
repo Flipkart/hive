@@ -24,6 +24,7 @@ public class FDPPropertySetter {
     public static final Logger LOG = LoggerFactory.getLogger(FDPPropertySetter.class);
     public static final SessionState.LogHelper console = new SessionState.LogHelper(LOG);
     public static final String DELIMITER = "---";
+    public static final String TOTAL_STAGE_DELIMITER = "/";
 
     public static void setUserSpecificQueue(HiveConf conf) {
         if (!customisedPropsToBeSet()) return;
@@ -60,7 +61,7 @@ public class FDPPropertySetter {
         return true;
     }
 
-    public static void setJobName(FDPAuth fdpAuth, HiveConf conf, String stage) {
+    public static void setJobName(FDPAuth fdpAuth, HiveConf conf, String stage, int jobs) {
         String queryId = conf.getVar(HiveConf.ConfVars.HIVEQUERYID);
         String loggedInUser = null;
         try {
@@ -72,7 +73,7 @@ public class FDPPropertySetter {
         String mapredJobName = null;
         if(!Strings.isNullOrEmpty(stage)) {
             mapredJobName = queryId + DELIMITER + fdpAuth.getRequestingIp() + DELIMITER
-                    + stage + DELIMITER + loggedInUser;
+                    + stage + TOTAL_STAGE_DELIMITER + jobs + DELIMITER + loggedInUser;
         }
         else {
             mapredJobName = queryId + DELIMITER + fdpAuth.getRequestingIp() + DELIMITER + loggedInUser;
