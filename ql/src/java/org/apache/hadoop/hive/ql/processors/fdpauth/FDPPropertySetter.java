@@ -61,27 +61,20 @@ public class FDPPropertySetter {
         return true;
     }
 
-    public static void setJobName(FDPAuth fdpAuth, HiveConf conf, String stage, int jobs) {
+    public static void setJobName(FDPAuth fdpAuth, String existingName, HiveConf conf, String stage, int jobs) {
         String queryId = conf.getVar(HiveConf.ConfVars.HIVEQUERYID);
-        String loggedInUser = null;
+        String loggedInUser = "NOT FOUND";
         try {
             loggedInUser = QueueFetcher.getLoggedInUser(fdpAuth, conf);
         } catch (IOException | InterruptedException e) {
             log.error("Couldn't fetch logged in user due to !" + e.getMessage());
-            throw new RuntimeException(e.getMessage());
         }
-        String mapredJobName = null;
-        if(!Strings.isNullOrEmpty(stage)) {
-            mapredJobName = queryId + DELIMITER + fdpAuth.getRequestingIp() + DELIMITER
-                    + stage + TOTAL_STAGE_DELIMITER + jobs + DELIMITER + loggedInUser;
-        }
-        else {
-            mapredJobName = queryId + DELIMITER + fdpAuth.getRequestingIp() + DELIMITER + loggedInUser;
-        }
-        log.info("Setting property {} as {}", MRJobConfig.JOB_NAME, mapredJobName);
-        conf.set(MRJobConfig.JOB_NAME, mapredJobName);
-        log.info("Setting property {} as {}", HIVE_QUERY_NAME, mapredJobName);
-        conf.set(HIVE_QUERY_NAME, mapredJobName);
+        String customisedName = queryId + DELIMITER + fdpAuth.getRequestingIp() + DELIMITER
+                + stage + TOTAL_STAGE_DELIMITER + jobs + DELIMITER + loggedInUser + DELIMITER + existingName;
+        log.info("Setting property {} as {}", MRJobConfig.JOB_NAME, customisedName);
+        conf.set(MRJobConfig.JOB_NAME, customisedName);
+        log.info("Setting property {} as {}", HIVE_QUERY_NAME, customisedName);
+        conf.set(HIVE_QUERY_NAME, customisedName);
     }
 
     private static void setQueue(FDPAuth fdpAuth, HiveConf conf) throws BillingOrgNotFoundException {
