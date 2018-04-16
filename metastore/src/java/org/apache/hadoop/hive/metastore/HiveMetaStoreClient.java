@@ -124,6 +124,7 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
   private final ClientCapabilities version;
 
   static final protected Logger LOG = LoggerFactory.getLogger("hive.metastore");
+  private Map<String, SchemeHandler> schemeHandlers = new HashMap<>();
 
   public HiveMetaStoreClient(HiveConf conf) throws MetaException {
     this(conf, null, true);
@@ -147,7 +148,10 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
     filterHook = loadFilterHooks();
     fileMetadataBatchSize = HiveConf.getIntVar(
         conf, HiveConf.ConfVars.METASTORE_BATCH_RETRIEVE_OBJECTS_MAX);
-
+    String[] schemeHandlers = HiveConf.getVar(conf, HiveConf.ConfVars.METASTORE_SCHEME_HANDLER_CLASSES).split(",");
+    for (String schemeHandler : schemeHandlers) {
+      initializeHandler(conf, schemeHandler);
+    }
     String msUri = conf.getVar(ConfVars.METASTOREURIS);
     localMetaStore = HiveConfUtil.isEmbeddedMetaStore(msUri);
     if (localMetaStore) {
@@ -245,6 +249,18 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
     }
     // finally open the store
     open();
+  }
+
+  private void initializeHandler(HiveConf conf, String schemeHandler) {
+    try {
+      final SchemeHandler handler = (SchemeHandler) Class.forName(schemeHandler)
+          .getConstructor(HiveConf.class).newInstance(conf);
+      schemeHandlers.put(handler.getScheme(), handler);
+    } catch (InstantiationException | IllegalAccessException
+        | ClassNotFoundException | NoSuchMethodException
+        | InvocationTargetException  e) {
+      throw new RuntimeException(e);
+    }
   }
 
   private MetaStoreFilterHook loadFilterHooks() throws IllegalStateException {
@@ -404,6 +420,7 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
 
     for (int attempt = 0; !isConnected && attempt < retries; ++attempt) {
       for (URI store : metastoreUris) {
+        store = getActualStore(store);
         LOG.info("Trying to connect to metastore with URI " + store);
 
         try {
@@ -532,6 +549,22 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
     snapshotActiveConf();
 
     LOG.info("Connected to metastore.");
+  }
+
+  private URI getActualStore(URI store) {
+    final String scheme = store.getScheme();
+    if (scheme.equals("thrift"))
+    {
+      return store;
+    }
+    else if (schemeHandlers.containsKey(scheme))
+    {
+      return schemeHandlers.get(scheme).getOne(store);
+    }
+    else
+    {
+      throw new RuntimeException("Unknown scheme " + scheme);
+    }
   }
 
   private void snapshotActiveConf() {
