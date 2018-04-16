@@ -129,6 +129,7 @@ public class HiveMetaStoreClient implements IMetaStoreClient, AutoCloseable {
   private final ClientCapabilities version;
 
   static final protected Logger LOG = LoggerFactory.getLogger(HiveMetaStoreClient.class);
+  private Map<String, SchemeHandler> schemeHandlers = new HashMap<>();
 
   //copied from ErrorMsg.java
   private static final String REPL_EVENTS_MISSING_IN_METASTORE = "Notification events are missing in the meta store.";
@@ -156,6 +157,12 @@ public class HiveMetaStoreClient implements IMetaStoreClient, AutoCloseable {
     uriResolverHook = loadUriResolverHook();
     fileMetadataBatchSize = MetastoreConf.getIntVar(
         conf, ConfVars.BATCH_RETRIEVE_OBJECTS_MAX);
+
+    final String uris = MetastoreConf.getVar(conf, ConfVars.METASTORE_SCHEME_HANDLER_CLASSES);
+    final String[] schemeHandlers = uris == "" ? new String[]{}: uris.split(",");
+    for (String schemeHandler : schemeHandlers) {
+      initializeHandler(conf, schemeHandler);
+    }
 
     String msUri = MetastoreConf.getVar(conf, ConfVars.THRIFT_URIS);
     localMetaStore = MetastoreConf.isEmbeddedMetaStore(msUri);
@@ -268,6 +275,16 @@ public class HiveMetaStoreClient implements IMetaStoreClient, AutoCloseable {
     }
   }
 
+  private void initializeHandler(Configuration conf, String schemeHandler) {
+    try {
+      final SchemeHandler handler = (SchemeHandler) Class.forName(schemeHandler)
+              .getConstructor(Configuration.class).newInstance(conf);
+      schemeHandlers.put(handler.getScheme(), handler);
+    } catch (InstantiationException | IllegalAccessException
+        | ClassNotFoundException | NoSuchMethodException | InvocationTargetException  e) {
+          throw new RuntimeException(e);
+    }
+  }
 
   private MetaStoreFilterHook loadFilterHooks() throws IllegalStateException {
     Class<? extends MetaStoreFilterHook> authProviderClass = MetastoreConf.
@@ -438,6 +455,7 @@ public class HiveMetaStoreClient implements IMetaStoreClient, AutoCloseable {
 
     for (int attempt = 0; !isConnected && attempt < retries; ++attempt) {
       for (URI store : metastoreUris) {
+        store = getActualStore(store);
         LOG.info("Trying to connect to metastore with URI " + store);
 
         try {
@@ -568,6 +586,23 @@ public class HiveMetaStoreClient implements IMetaStoreClient, AutoCloseable {
     snapshotActiveConf();
 
     LOG.info("Connected to metastore.");
+  }
+
+  private URI getActualStore(URI store) {
+    final String scheme = store.getScheme();
+    if (scheme.equals("thrift"))
+    {
+      return store;
+    }
+    else if (schemeHandlers.containsKey(scheme))
+    {
+      LOG.info("Using schemehandler {}:{} to get a metastore host", scheme, store.getHost());
+      return schemeHandlers.get(scheme).getOne(store);
+    }
+    else
+    {
+      throw new RuntimeException("Unknown scheme " + scheme);
+    }
   }
 
   private void snapshotActiveConf() {

@@ -1044,7 +1044,6 @@ public class HiveConf extends Configuration {
     METASTORE_BATCH_RETRIEVE_OBJECTS_MAX(
         "hive.metastore.batch.retrieve.table.partition.max", 1000,
         "Maximum number of objects that metastore internally retrieves in one batch."),
-
     /**
      * @deprecated Use MetastoreConf.INIT_HOOKS
      */
