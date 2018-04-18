@@ -559,6 +559,7 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
     }
     else if (schemeHandlers.containsKey(scheme))
     {
+      LOG.info("Using schemehandler {}:{} to get a metastore host", scheme, store.getHost());
       return schemeHandlers.get(scheme).getOne(store);
     }
     else
