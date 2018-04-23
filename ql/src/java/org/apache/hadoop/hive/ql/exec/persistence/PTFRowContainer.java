@@ -112,7 +112,7 @@ public class PTFRowContainer<Row extends List<Object>> extends RowContainer<Row>
   public Row first() throws HiveException {
     Row r = super.first();
 
-    if ( blockInfos.size() > 0 ) {
+    if ( blockInfos!=null && blockInfos.size() > 0 ) {
       InputSplit[] inputSplits = getInputSplits();
       FileSplit fS = null;
       BlockInfo bI = blockInfos.get(0);
