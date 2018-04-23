@@ -33,12 +33,7 @@ import org.apache.hadoop.hive.common.type.HiveChar;
 import org.apache.hadoop.hive.common.type.HiveDecimal;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.ql.exec.SerializationUtilities;
-import org.apache.hadoop.hive.ql.plan.ExprNodeColumnDesc;
-import org.apache.hadoop.hive.ql.plan.ExprNodeConstantDesc;
-import org.apache.hadoop.hive.ql.plan.ExprNodeDesc;
-import org.apache.hadoop.hive.ql.plan.ExprNodeDynamicValueDesc;
-import org.apache.hadoop.hive.ql.plan.ExprNodeGenericFuncDesc;
-import org.apache.hadoop.hive.ql.plan.TableScanDesc;
+import org.apache.hadoop.hive.ql.plan.*;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDFBetween;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDFIn;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDFOPAnd;
@@ -138,9 +133,22 @@ public class ConvertAstToSearchArg {
     if (child instanceof ExprNodeColumnDesc) {
       return ((ExprNodeColumnDesc) child).getColumn();
     }
+    else if(child instanceof ExprNodeFieldDesc) {
+
+      return getFulyQualifiedColumnName(child);
+    }
     return null;
   }
 
+  private static String getFulyQualifiedColumnName(ExprNodeDesc expr)
+  {
+    if(expr instanceof ExprNodeColumnDesc) {
+      return ((ExprNodeColumnDesc) expr).getColumn();
+    }
+    else {
+      return getFulyQualifiedColumnName(((ExprNodeFieldDesc) expr).getDesc()) + "." + ((ExprNodeFieldDesc) expr).getFieldName();
+    }
+  }
   private static Object boxLiteral(ExprNodeConstantDesc constantDesc,
                                    PredicateLeaf.Type type) {
     Object lit = constantDesc.getValue();
@@ -334,7 +342,7 @@ public class ConvertAstToSearchArg {
     List<ExprNodeDesc> children = expr.getChildren();
     for(int i = 0; i < children.size(); ++i) {
       ExprNodeDesc child = children.get(i);
-      if (child instanceof ExprNodeColumnDesc) {
+      if (child instanceof ExprNodeColumnDesc || child instanceof ExprNodeFieldDesc) {
         // if we already found a variable, this isn't a sarg
         if (result != -1) {
           return -1;
@@ -383,8 +391,8 @@ public class ConvertAstToSearchArg {
       }
 
       // otherwise, we don't know what to do so make it a maybe
-      builder.literal(SearchArgument.TruthValue.YES_NO_NULL);
-      return;
+      //builder.literal(SearchArgument.TruthValue.YES_NO_NULL);
+      //return;
     }
 
     // get the kind of expression
