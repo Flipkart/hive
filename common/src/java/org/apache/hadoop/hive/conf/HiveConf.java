@@ -787,7 +787,7 @@ public class HiveConf extends Configuration {
         "hive.metastore.batch.retrieve.table.partition.max", 1000,
         "Maximum number of objects that metastore internally retrieves in one batch."),
     METASTORE_SCHEME_HANDLER_CLASSES(
-        "hive.metastore.client.scheme.handlers", "null",
+        "hive.metastore.client.scheme.handlers", null,
         "Scheme handlers that can interpret metastore uris other than the ones starting with thrift"),
 
     METASTORE_INIT_HOOKS("hive.metastore.init.hooks", "",

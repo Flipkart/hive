@@ -148,13 +148,15 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
     filterHook = loadFilterHooks();
     fileMetadataBatchSize = HiveConf.getIntVar(
         conf, HiveConf.ConfVars.METASTORE_BATCH_RETRIEVE_OBJECTS_MAX);
-    String[] schemeHandlers = HiveConf.getVar(conf, HiveConf.ConfVars.METASTORE_SCHEME_HANDLER_CLASSES).split(",");
+    final String uris = HiveConf.getVar(conf, ConfVars.METASTORE_SCHEME_HANDLER_CLASSES);
+    final String[] schemeHandlers = uris == null? new String[]{}: uris.split(",");
     for (String schemeHandler : schemeHandlers) {
       initializeHandler(conf, schemeHandler);
     }
     String msUri = conf.getVar(ConfVars.METASTOREURIS);
     localMetaStore = HiveConfUtil.isEmbeddedMetaStore(msUri);
     if (localMetaStore) {
+      
       if (!allowEmbedded) {
         throw new MetaException("Embedded metastore is not allowed here. Please configure "
             + ConfVars.METASTOREURIS.varname + "; it is currently set to [" + msUri + "]");
