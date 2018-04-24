@@ -349,6 +349,56 @@ public class OrcInputFormat implements InputFormat<NullWritable, OrcStruct>,
     return result;
   }
 
+
+  public static boolean[] genIncludedColumns(TypeDescription readerSchema,
+                                             List<Integer> included, Configuration conf) {
+
+    boolean[] result = new boolean[readerSchema.getMaximumId() + 1];
+    if (included == null) {
+      Arrays.fill(result, true);
+      return result;
+    }
+
+    List<String> nestedColumnPaths = new ArrayList<>(ColumnProjectionUtils.getNestedColumnPaths(conf));
+
+    if(nestedColumnPaths.size() == 0) {
+      return  genIncludedColumns(readerSchema,included);
+    }
+
+    result[0] = true;
+    for(String column : nestedColumnPaths)
+    {
+      String[] columnpath = column.split("\\.");
+      result = setIncludeForNestedColumns(columnpath,0,readerSchema,result);
+    }
+
+    return result;
+  }
+
+  private static boolean[] setIncludeForNestedColumns(String[] columnPath,int postion,TypeDescription readerSchema,boolean[] include )
+  {
+    if(postion == (columnPath.length) && readerSchema.getChildren() != null)
+    {
+      for(int col = readerSchema.getId(); col <= readerSchema.getMaximumId(); ++col) {
+        include[col] = true;
+      }
+    }
+    else if(postion == (columnPath.length) && readerSchema.getChildren() == null)
+    {
+       include[readerSchema.getId()] = true;
+    }
+    else {
+      int fieldId=0;
+      String columnName = columnPath[postion];
+      while(!columnName.equalsIgnoreCase(readerSchema.getFieldNames().get(fieldId))) {
+        fieldId++;
+      }
+      TypeDescription childSchema = readerSchema.getChildren().get(fieldId);
+      include = setIncludeForNestedColumns(columnPath,++postion,childSchema,include);
+      include[childSchema.getId()] = true;
+    }
+    return include;
+  }
   /**
    * Reverses genIncludedColumns; produces the table columns indexes from ORC included columns.
    * @param readerSchema The ORC reader schema for the table.
@@ -397,7 +447,7 @@ public class OrcInputFormat implements InputFormat<NullWritable, OrcStruct>,
                                              Configuration conf) {
      if (!ColumnProjectionUtils.isReadAllColumns(conf)) {
       List<Integer> included = ColumnProjectionUtils.getReadColumnIDs(conf);
-      return genIncludedColumns(readerSchema, included);
+      return genIncludedColumns(readerSchema, included, conf);
     } else {
       return null;
     }
