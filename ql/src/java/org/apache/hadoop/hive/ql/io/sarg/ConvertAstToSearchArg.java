@@ -130,23 +130,35 @@ public class ConvertAstToSearchArg {
       return null;
     }
     ExprNodeDesc child = children.get(variable);
+
     if (child instanceof ExprNodeColumnDesc) {
+      /* If the instance of ExprNodeGenericFuncDesc is ExprNodeColumnDesc means it is top level column name.
+       * Name of the column is fully qualified Column name so return column name.
+       * */
       return ((ExprNodeColumnDesc) child).getColumn();
     }
     else if(child instanceof ExprNodeFieldDesc) {
-
-      return getFulyQualifiedColumnName(child);
+      /* If the instance of ExprNodeGenericFuncDesc is ExprNodeFieldDesc means it is nested level column name.
+       * So generate and return fully qualified Column name.
+       * */
+      return getFullyQualifiedColumnName(child);
     }
     return null;
   }
 
-  private static String getFulyQualifiedColumnName(ExprNodeDesc expr)
+  /**
+   * Recursively parse ExprNodeDesc and generate fully qualified Column name.
+   * @param expr Instance
+   *
+   * @return fully qualified Column name.
+   */
+  private static String getFullyQualifiedColumnName(ExprNodeDesc expr)
   {
     if(expr instanceof ExprNodeColumnDesc) {
       return ((ExprNodeColumnDesc) expr).getColumn();
     }
     else {
-      return getFulyQualifiedColumnName(((ExprNodeFieldDesc) expr).getDesc()) + "." + ((ExprNodeFieldDesc) expr).getFieldName();
+      return getFullyQualifiedColumnName(((ExprNodeFieldDesc) expr).getDesc()) + "." + ((ExprNodeFieldDesc) expr).getFieldName();
     }
   }
   private static Object boxLiteral(ExprNodeConstantDesc constantDesc,
