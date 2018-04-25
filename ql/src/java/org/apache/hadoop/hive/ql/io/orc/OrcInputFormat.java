@@ -21,13 +21,7 @@ package org.apache.hadoop.hive.ql.io.orc;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.PrivilegedExceptionAction;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.NavigableMap;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutorCompletionService;
@@ -349,56 +343,80 @@ public class OrcInputFormat implements InputFormat<NullWritable, OrcStruct>,
     return result;
   }
 
-
-  public static boolean[] genIncludedColumns(TypeDescription readerSchema,
-                                             List<Integer> included, Configuration conf) {
-
+  /**
+   * Generate list of columnId which is to be read from the file.
+   *
+   * @param readerSchema Schema of the file from where read is to be performed
+   * @param included list of top level column which is to be read
+   * @param conf Hive conf to access conf "hive.io.file.readNestedColumn.paths"
+   *
+   * @return boolean array which corresponds to list of columnIds need to be read.
+   */
+  private static boolean[] genIncludedColumns(TypeDescription readerSchema,
+                                              List<Integer> included, Configuration conf) {
     boolean[] result = new boolean[readerSchema.getMaximumId() + 1];
-    if (included == null) {
+    if (included != null) {
+      /* Include nested column only which are present in conf "hive.io.file.readNestedColumn.paths"  */
+      Set<String> nestedColumnPaths = ColumnProjectionUtils.getNestedColumnPaths(conf);
+      if(nestedColumnPaths.size() != 0) {
+        result[0] = true;
+        for(String column : nestedColumnPaths) {
+          String[] columnPath = column.split("\\.");
+          result = setIncludeForNestedColumns(columnPath,0,readerSchema,result);
+        }
+      } else {
+        /* This is a fail-safe in-case we fail to obtain nested column paths correctly */
+        result = genIncludedColumns(readerSchema,included);
+      }
+    } else {
+      /* Included will be null in select * scenario and hence filling all as true */
       Arrays.fill(result, true);
-      return result;
     }
-
-    List<String> nestedColumnPaths = new ArrayList<>(ColumnProjectionUtils.getNestedColumnPaths(conf));
-
-    if(nestedColumnPaths.size() == 0) {
-      return  genIncludedColumns(readerSchema,included);
-    }
-
-    result[0] = true;
-    for(String column : nestedColumnPaths)
-    {
-      String[] columnpath = column.split("\\.");
-      result = setIncludeForNestedColumns(columnpath,0,readerSchema,result);
-    }
-
     return result;
   }
 
-  private static boolean[] setIncludeForNestedColumns(String[] columnPath,int postion,TypeDescription readerSchema,boolean[] include )
+  /**
+   * Convert ColumnPath to ColumnId and set ColumnId in Include boolean array to true.
+   *
+   * @param columnPath "a.b.c"
+   * @param position index counter of columnPath field.
+   * @param readerSchema schema in which column name is to searched.
+   * @param include boolean array indicate which all columns are needed to be read from file.
+   *
+   * @return filled "include" boolean array.
+   */
+  private static boolean[] setIncludeForNestedColumns(String[] columnPath,int position,
+                                                      TypeDescription readerSchema, boolean[] include )
   {
-    if(postion == (columnPath.length) && readerSchema.getChildren() != null)
+    if(position == (columnPath.length) && readerSchema.getChildren() != null)
     {
+      /* If the column path is "a.b.c". If c is nested structure then set true for all the children columns. */
       for(int col = readerSchema.getId(); col <= readerSchema.getMaximumId(); ++col) {
         include[col] = true;
       }
     }
-    else if(postion == (columnPath.length) && readerSchema.getChildren() == null)
+    else if(position == (columnPath.length) && readerSchema.getChildren() == null)
     {
-       include[readerSchema.getId()] = true;
+      /* If the column path is "a.b.c". If c is a column then set true for column c. */
+      include[readerSchema.getId()] = true;
     }
     else {
+      /*
+      * If the column Path is "a.b.c".
+      * Then set true for a, b and c columns in depth first search fashion.
+      * */
       int fieldId=0;
-      String columnName = columnPath[postion];
+      String columnName = columnPath[position];
       while(!columnName.equalsIgnoreCase(readerSchema.getFieldNames().get(fieldId))) {
         fieldId++;
       }
       TypeDescription childSchema = readerSchema.getChildren().get(fieldId);
-      include = setIncludeForNestedColumns(columnPath,++postion,childSchema,include);
+      include = setIncludeForNestedColumns(columnPath,++position,childSchema,include);
       include[childSchema.getId()] = true;
     }
     return include;
   }
+
   /**
    * Reverses genIncludedColumns; produces the table columns indexes from ORC included columns.
    * @param readerSchema The ORC reader schema for the table.
