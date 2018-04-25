@@ -412,7 +412,7 @@ public class ConvertAstToSearchArg {
       else if (expression instanceof ExprNodeFieldDesc) {
         ExprNodeFieldDesc nodeFieldDesc = (ExprNodeFieldDesc) expression;
         if (nodeFieldDesc.getTypeString().equals("boolean")) {
-          builder.equals(getFulyQualifiedColumnName(nodeFieldDesc), PredicateLeaf.Type.BOOLEAN,
+          builder.equals(getFullyQualifiedColumnName(nodeFieldDesc), PredicateLeaf.Type.BOOLEAN,
                   true);
           return;
         }
