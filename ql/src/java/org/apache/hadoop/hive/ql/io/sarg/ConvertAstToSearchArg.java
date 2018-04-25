@@ -390,9 +390,21 @@ public class ConvertAstToSearchArg {
         }
       }
 
-      // otherwise, we don't know what to do so make it a maybe
-      //builder.literal(SearchArgument.TruthValue.YES_NO_NULL);
-      //return;
+      // if it is a reference to a boolean nested column, covert it to a truth test.
+      else if (expression instanceof ExprNodeFieldDesc) {
+        ExprNodeFieldDesc nodeFieldDesc = (ExprNodeFieldDesc) expression;
+        if (nodeFieldDesc.getTypeString().equals("boolean")) {
+          builder.equals(getFulyQualifiedColumnName(nodeFieldDesc), PredicateLeaf.Type.BOOLEAN,
+                  true);
+          return;
+        }
+      }
+
+      else {
+        // otherwise, we don't know what to do so make it a maybe
+        builder.literal(SearchArgument.TruthValue.YES_NO_NULL);
+        return;
+      }
     }
 
     // get the kind of expression

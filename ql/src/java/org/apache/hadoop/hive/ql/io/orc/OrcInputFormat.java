@@ -21,13 +21,7 @@ package org.apache.hadoop.hive.ql.io.orc;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.PrivilegedExceptionAction;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.NavigableMap;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutorCompletionService;
@@ -349,52 +343,49 @@ public class OrcInputFormat implements InputFormat<NullWritable, OrcStruct>,
     return result;
   }
 
-
-  public static boolean[] genIncludedColumns(TypeDescription readerSchema,
+  private static boolean[] genIncludedColumns(TypeDescription readerSchema,
                                              List<Integer> included, Configuration conf) {
-
     boolean[] result = new boolean[readerSchema.getMaximumId() + 1];
-    if (included == null) {
+    if (included != null) {
+      Set<String> nestedColumnPaths = ColumnProjectionUtils.getNestedColumnPaths(conf);
+      if(nestedColumnPaths.size() != 0) {
+        result[0] = true;
+        for(String column : nestedColumnPaths) {
+          String[] columnPath = column.split("\\.");
+          result = setIncludeForNestedColumns(columnPath,0,readerSchema,result);
+        }
+      } else {
+        /* This is a fail-safe in-case we fail to obtain nested column paths correctly */
+        result = genIncludedColumns(readerSchema,included);
+      }
+    } else {
+      /* Included will be null in select * scenario and hence filling as true */
       Arrays.fill(result, true);
-      return result;
     }
-
-    List<String> nestedColumnPaths = new ArrayList<>(ColumnProjectionUtils.getNestedColumnPaths(conf));
-
-    if(nestedColumnPaths.size() == 0) {
-      return  genIncludedColumns(readerSchema,included);
-    }
-
-    result[0] = true;
-    for(String column : nestedColumnPaths)
-    {
-      String[] columnpath = column.split("\\.");
-      result = setIncludeForNestedColumns(columnpath,0,readerSchema,result);
-    }
-
     return result;
   }
 
-  private static boolean[] setIncludeForNestedColumns(String[] columnPath,int postion,TypeDescription readerSchema,boolean[] include )
+  private static boolean[] setIncludeForNestedColumns(String[] columnPath,int position,
+                                                      TypeDescription readerSchema, boolean[] include )
   {
-    if(postion == (columnPath.length) && readerSchema.getChildren() != null)
+    if(position == (columnPath.length) && readerSchema.getChildren() != null)
     {
       for(int col = readerSchema.getId(); col <= readerSchema.getMaximumId(); ++col) {
         include[col] = true;
       }
     }
-    else if(postion == (columnPath.length) && readerSchema.getChildren() == null)
+    else if(position == (columnPath.length) && readerSchema.getChildren() == null)
     {
        include[readerSchema.getId()] = true;
     }
     else {
       int fieldId=0;
-      String columnName = columnPath[postion];
+      String columnName = columnPath[position];
       while(!columnName.equalsIgnoreCase(readerSchema.getFieldNames().get(fieldId))) {
         fieldId++;
       }
       TypeDescription childSchema = readerSchema.getChildren().get(fieldId);
-      include = setIncludeForNestedColumns(columnPath,++postion,childSchema,include);
+      include = setIncludeForNestedColumns(columnPath,++position,childSchema,include);
       include[childSchema.getId()] = true;
     }
     return include;
