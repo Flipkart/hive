@@ -155,9 +155,15 @@ public class ConvertAstToSearchArg {
   private static String getFullyQualifiedColumnName(ExprNodeDesc expr)
   {
     if(expr instanceof ExprNodeColumnDesc) {
+      /* If the instance of ExprNodeGenericFuncDesc is ExprNodeColumnDesc means it is top level column name.
+       * So return column name.
+       * */
       return ((ExprNodeColumnDesc) expr).getColumn();
     }
     else {
+      /* If the instance of ExprNodeGenericFuncDesc is ExprNodeFieldDesc means it is nested level column name.
+       * So call recursion.
+       * */
       return getFullyQualifiedColumnName(((ExprNodeFieldDesc) expr).getDesc()) + "." + ((ExprNodeFieldDesc) expr).getFieldName();
     }
   }
