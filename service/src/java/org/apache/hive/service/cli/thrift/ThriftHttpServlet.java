@@ -516,12 +516,11 @@ public class ThriftHttpServlet extends TServlet {
   private String getPassword(HttpServletRequest request, String authType)
       throws HttpAuthenticationException {
     String creds[] = getAuthHeaderTokens(request, authType);
-    // Password must be present
-    if (creds[1] == null || creds[1].isEmpty()) {
-      throw new HttpAuthenticationException("Authorization header received " +
-          "from the client does not contain username.");
+    if (creds.length == 2 && creds[1] != null) {
+      return creds[1];
+    } else {
+      return "";
     }
-    return creds[1];
   }
 
   private String[] getAuthHeaderTokens(HttpServletRequest request,
