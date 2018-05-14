@@ -27,7 +27,6 @@ import javax.security.auth.login.LoginException;
 import javax.security.sasl.AuthenticationException;
 import javax.security.sasl.Sasl;
 
-import com.google.common.base.Optional;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
 import org.apache.hadoop.hive.ql.metadata.Hive;
@@ -56,6 +55,7 @@ import org.slf4j.LoggerFactory;
  */
 public class HiveAuthFactory {
   private static final Logger LOG = LoggerFactory.getLogger(HiveAuthFactory.class);
+
 
   public enum AuthTypes {
     NOSASL("NOSASL"),
@@ -91,6 +91,7 @@ public class HiveAuthFactory {
     this.conf = conf;
     transportMode = conf.getVar(HiveConf.ConfVars.HIVE_SERVER2_TRANSPORT_MODE);
     authTypeStr = conf.getVar(HiveConf.ConfVars.HIVE_SERVER2_AUTHENTICATION);
+
     // ShimLoader.getHadoopShims().isSecurityEnabled() will only check that
     // hadoopAuth is not simple, it does not guarantee it is kerberos
     hadoopAuth = conf.get(HADOOP_SECURITY_AUTHENTICATION, "simple");

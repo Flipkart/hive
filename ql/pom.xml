@@ -711,17 +711,6 @@
       <version>${glassfish.jersey.version}</version>
       <scope>test</scope>
     </dependency>
-      <dependency>
-          <groupId>com.flipkart.fdp</groupId>
-          <artifactId>fdp-cfg-util</artifactId>
-          <version>1.7.0.29</version>
-          <exclusions>
-              <exclusion>
-                  <groupId>com.ning</groupId>
-                  <artifactId>async-http-client</artifactId>
-              </exclusion>
-          </exclusions>
-      </dependency>
   </dependencies>
 
   <profiles>
