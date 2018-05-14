@@ -20,8 +20,7 @@ import java.util.Map;
  * Created by kartik.bhatia on 22/02/18.
  */
 public class QueueFetcher {
-    public static final String SUDO_USER_PROP_KEY = "SUDO_USER";
-    public static final String USER = "USER";
+    public static final String SSH_TTY_PROP_KEY = "SSH_TTY";
     private static Optional<String> queueToBeSet;
     public static ObjectMapper mapper;
 
@@ -110,17 +109,45 @@ public class QueueFetcher {
 
     private static String getLoggedInUser() throws IOException, InterruptedException {
         Log.info("Getting logged in user!");
-        Optional<String> sudoUser = Optional.fromNullable(System.getenv().get(SUDO_USER_PROP_KEY));
-        Optional<String> user = Optional.fromNullable(System.getenv().get(USER));
-        if(sudoUser.isPresent()){
-            Log.info("Got prop {}, value {}", SUDO_USER_PROP_KEY, sudoUser.get());
-            return sudoUser.get();
+        Optional<String> patternOptional = getSshTerminalHackery();
+        if(!patternOptional.isPresent()){
+            Log.warn("Didn't get pattern to serach, returning null!");
+            return null;
         }
-        else if(user.isPresent()){
-            Log.info("Got prop {}, value {}", USER, user.get());
-            return user.get();
+        Log.info("Pattern to search is {}", patternOptional.get());
+        String[] cmd = {
+                "/bin/sh",
+                "-c",
+                "who | grep -w " + patternOptional.get()
+        };
+        Process process = Runtime.getRuntime().exec(cmd);
+        process.waitFor();
+
+        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+        String line;
+        while ((line = reader.readLine())!= null) {
+            //who am i command's o/p first column is the actual user
+            return line.split(" ")[0];
         }
-        return null;
+        return line;
+    }
+
+    private static Optional<String> getSshTerminalHackery() {
+        Optional<String> terminalNumber = Optional.fromNullable(System.getenv().get(SSH_TTY_PROP_KEY));
+        if(!terminalNumber.isPresent()){
+            return Optional.absent();
+        }
+        Log.info("Getting prop {} which is {}", SSH_TTY_PROP_KEY, terminalNumber.get());
+        StringBuilder patternToSearch = new StringBuilder();
+        String [] splitOpSshTty = terminalNumber.get().split("/");
+        int sshttylen = splitOpSshTty.length;
+        if(sshttylen >= 2){
+            patternToSearch.append(splitOpSshTty[sshttylen-2]);
+            patternToSearch.append("/");
+            patternToSearch.append(splitOpSshTty[sshttylen-1]);
+            return Optional.of(patternToSearch.toString());
+        }
+        return Optional.absent();
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
