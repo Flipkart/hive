@@ -17,7 +17,7 @@ public enum RequestingIpWrapper {
     }
   };
 
-  public ThreadLocal<String> requestingIp;
+  public ThreadLocal<String> requestingIp = new ThreadLocal<>();
 
   public abstract String getRequestingIp();
 

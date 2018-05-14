@@ -3385,7 +3385,7 @@ public class HiveConf extends Configuration {
       /**
        *Properties to enable feature of modifying job level properties at hive level
        */
-    QUEUE_ENFORCER_CLASS("queue.enforcer.class", "org.apache.hadoop.hive.ql.propertymodifier.NoQueueEnforced",
+    QUEUE_ENFORCER_CLASS("queue.enforcer.class", "org.apache.hadoop.hive.ql.propertymodifier.ReturnExistingQueue",
                                  "Fully Qualified class name for concerete impl to be used to enforce queues"),
     JOBNAME_ENRICHER_CLASS("jobname.enricher.class", "", "Fully qualified name of class to be used to enrich job name");
 

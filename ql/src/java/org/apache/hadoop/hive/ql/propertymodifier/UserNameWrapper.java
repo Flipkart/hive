@@ -16,7 +16,7 @@ public enum UserNameWrapper {
     }
   };
 
-  public ThreadLocal<String> username;
+  public ThreadLocal<String> username = new ThreadLocal<>();
   public abstract String getUsername();
   public abstract void setUsername(String usrname);
 }

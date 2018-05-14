@@ -69,7 +69,7 @@ public final class CommandProcessorFactory {
       queueEnforcer = (QueueEnforcer) Class.forName(queueEnforcerClassName)
           .newInstance();
     } catch (Throwable e) {
-      throw new RuntimeException("COuldn't enforce queue due to " + e.getMessage());
+      throw new RuntimeException("Couldn't enforce queue due to " + e.getMessage());
     }
     String enforcedQueue = queueEnforcer
         .getEnforcedQueue(conf.get(Constants.MAPRED_QUEUE_NAME),
