@@ -161,8 +161,8 @@ public final class CommandProcessorFactory {
           LOG.info("This is not gateway box, setting nothing!");
           return;
         }
-      } catch (Throwable e) {
-        LOG.error(e.getMessage());
+      } catch (IOException e) {
+        LOG.error("Couldn't get Map from JSON file!");
       }
     }
     else {
@@ -184,12 +184,12 @@ public final class CommandProcessorFactory {
         conf.set(TEZ_QUEUE_PROP, queue);
       }
       if(!conf.get(MAPRED_QUEUE_PROP).equals(queue)){
-        console.printError(String.format("You have set invalid queue name %s for mapred job, this will be ignored and set to apt org queue %s",
+        console.printInfo(String.format("You have set invalid queue name %s for mapred job, this will be ignored and set to apt org queue %s",
                 conf.get(MAPRED_QUEUE_PROP), queue));
         conf.set(MAPRED_QUEUE_PROP, queue);
       }
       if(!conf.get(TEZ_QUEUE_PROP).equals(queue)){
-        console.printError(String.format("You have set invalid queue name %s for tez job, this will be ignored and set to apt org queue %s",
+        console.printInfo(String.format("You have set invalid queue name %s for tez job, this will be ignored and set to apt org queue %s",
                 conf.get(TEZ_QUEUE_PROP), queue));
         conf.set(TEZ_QUEUE_PROP, queue);
       }
@@ -211,5 +211,9 @@ public final class CommandProcessorFactory {
     }
 
     mapDrivers.remove(conf);
+  }
+
+  public static void main(String[] args) throws IOException {
+    System.out.println(getMapFromFile(new File("/tmp/fdp-properties.json")));
   }
 }
