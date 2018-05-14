@@ -43,13 +43,13 @@ public class QueueFetcher {
             String billingOrg = getBillingOrgFromUserID(fdpGatewayBoxConfiguration, userId);
             Log.info("Got billing org {}", billingOrg);
             if(billingOrg==null){
-                Log.info("No billing org found for user {}!, exiting with error", userId);
-                return null;
+                Log.info("No billing org found for user!, executing in default queue i.e {}", fdpGatewayBoxConfiguration.getAdhocDefaultQueue());
+                return fdpGatewayBoxConfiguration.getAdhocDefaultQueue();
             }
             String queueName = getQueueForBillingOrg(fdpGatewayBoxConfiguration, billingOrg);
             Log.info("Got queue name is {}", queueName);
             if(queueName==null){
-                Log.warn("No queue found for billing org!, executing in default queue i.e {}", fdpGatewayBoxConfiguration.getAdhocDefaultQueue());
+                Log.info("No queue found for billing org!, executing in default queue i.e {}", fdpGatewayBoxConfiguration.getAdhocDefaultQueue());
                 return fdpGatewayBoxConfiguration.getAdhocDefaultQueue();
             }
             return queueName;

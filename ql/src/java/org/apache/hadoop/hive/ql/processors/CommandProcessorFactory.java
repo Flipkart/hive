@@ -161,9 +161,6 @@ public final class CommandProcessorFactory {
           LOG.info("This is not gateway box, setting nothing!");
           return;
         }
-      } catch (BillingOrgNotFoundException billingOrgNotException){
-        LOG.info("Couldn't find billing org, exiting with error");
-        throw new RuntimeException(billingOrgNotException.getMessage());
       } catch (Throwable e) {
         LOG.error(e.getMessage());
       }
@@ -173,13 +170,9 @@ public final class CommandProcessorFactory {
     }
   }
 
-  private static void setPropertiesHelper(FDPGatewayBoxConfiguration fdpGatewayBoxConfiguration, HiveConf conf) throws BillingOrgNotFoundException{
+  private static void setPropertiesHelper(FDPGatewayBoxConfiguration fdpGatewayBoxConfiguration, HiveConf conf) {
     try {
       String queue = QueueFetcher.getQueueForLoggedInUser(fdpGatewayBoxConfiguration);
-      if(queue==null){
-        console.printError(fdpGatewayBoxConfiguration.getErrorMsg());
-        throw new BillingOrgNotFoundException("Couldn't find billing org mapping for user!");
-      }
       Optional<String> mapredQueueOptional = Optional.fromNullable(conf.get(MAPRED_QUEUE_PROP));
       Optional<String> tezQueueOptional = Optional.fromNullable(conf.get(TEZ_QUEUE_PROP));
       if(!mapredQueueOptional.isPresent() || mapredQueueOptional.get().equals("default")){
@@ -218,12 +211,5 @@ public final class CommandProcessorFactory {
     }
 
     mapDrivers.remove(conf);
-  }
-
-  private static class BillingOrgNotFoundException extends Exception {
-
-    public BillingOrgNotFoundException(String message) {
-      super(message);
-    }
   }
 }

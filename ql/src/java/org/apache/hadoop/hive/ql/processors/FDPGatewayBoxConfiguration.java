@@ -12,16 +12,6 @@ public class FDPGatewayBoxConfiguration {
     private String clientSecretKey;
     private String adhocDefaultQueue;
 
-    public String getErrorMsg() {
-        return errorMsg;
-    }
-
-    public void setErrorMsg(String errorMsg) {
-        this.errorMsg = errorMsg;
-    }
-
-    private String errorMsg;
-
     public String getBoxType() {
         return boxType;
     }
