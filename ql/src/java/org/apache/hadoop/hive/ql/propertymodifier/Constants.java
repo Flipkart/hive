@@ -7,4 +7,5 @@ public class Constants {
 
   public static String MAPRED_QUEUE_NAME = "mapreduce.job.queuename";
   public static String TEZ_QUEUE_NAME = "tez.queue.name";
+  public static final String INITIATOR = "job.initiator.name";
 }

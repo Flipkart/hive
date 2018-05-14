@@ -95,7 +95,6 @@ import org.apache.hadoop.hive.ql.parse.HiveSemanticAnalyzerHookContext;
 import org.apache.hadoop.hive.ql.parse.HiveSemanticAnalyzerHookContextImpl;
 import org.apache.hadoop.hive.ql.parse.ImportSemanticAnalyzer;
 import org.apache.hadoop.hive.ql.parse.ParseContext;
-import org.apache.hadoop.hive.ql.parse.ParseDriver;
 import org.apache.hadoop.hive.ql.parse.ParseUtils;
 import org.apache.hadoop.hive.ql.parse.PrunedPartitionList;
 import org.apache.hadoop.hive.ql.parse.SemanticAnalyzer;
@@ -106,6 +105,10 @@ import org.apache.hadoop.hive.ql.plan.HiveOperation;
 import org.apache.hadoop.hive.ql.plan.TableDesc;
 import org.apache.hadoop.hive.ql.processors.CommandProcessor;
 import org.apache.hadoop.hive.ql.processors.CommandProcessorResponse;
+import org.apache.hadoop.hive.ql.propertymodifier.ContextForJobName;
+import org.apache.hadoop.hive.ql.propertymodifier.JobNameEnricher;
+import org.apache.hadoop.hive.ql.propertymodifier.RequestingIpWrapper;
+import org.apache.hadoop.hive.ql.propertymodifier.UserNameWrapper;
 import org.apache.hadoop.hive.ql.security.authorization.AuthorizationUtils;
 import org.apache.hadoop.hive.ql.security.authorization.HiveAuthorizationProvider;
 import org.apache.hadoop.hive.ql.security.authorization.plugin.HiveOperationType;
@@ -2159,7 +2162,7 @@ public class Driver implements CommandProcessor {
       if (noName) {
         conf.set(MRJobConfig.JOB_NAME, jobname + "(" + tsk.getId() + ")");
       }
-      //TODO Add interface to enrich job name
+      enrichJobName(tsk, queryId, jobs);
       conf.set("mapreduce.workflow.node.name", tsk.getId());
       Utilities.setWorkflowAdjacencies(conf, plan);
       cxt.incCurJobNo(1);
@@ -2185,6 +2188,20 @@ public class Driver implements CommandProcessor {
       tskRun.runSequential();
     }
     return tskRun;
+  }
+
+  private void enrichJobName(Task<? extends Serializable> tsk, String queryId, int jobs) {
+    JobNameEnricher jobEnricher = null;
+    try {
+      jobEnricher = (JobNameEnricher) Class.forName(conf.getVar(ConfVars.JOBNAME_ENRICHER_CLASS))
+          .newInstance();
+    } catch (Throwable e) {
+      throw new RuntimeException("Couldn't enrich job name due to " + e.getMessage());
+    }
+    ContextForJobName jobNameContext = new ContextForJobName(tsk.getId(), String.valueOf(jobs),
+        UserNameWrapper.INSTANCE.getUsername(), queryId, RequestingIpWrapper.INSTANCE.getRequestingIp());
+    conf.set(MRJobConfig.JOB_NAME,
+        jobEnricher.getEnrichedJobName(conf.get(MRJobConfig.JOB_NAME), jobNameContext));
   }
 
   public boolean isFetchingTable() {

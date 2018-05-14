@@ -68,7 +68,6 @@ import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.ql.CommandNeedRetryException;
 import org.apache.hadoop.hive.ql.Driver;
-import org.apache.hadoop.hive.ql.QueryPlan;
 import org.apache.hadoop.hive.ql.exec.FunctionRegistry;
 import org.apache.hadoop.hive.ql.exec.mr.HadoopJobExecHelper;
 import org.apache.hadoop.hive.ql.exec.tez.TezJobExecHelper;
@@ -76,6 +75,8 @@ import org.apache.hadoop.hive.ql.parse.HiveParser;
 import org.apache.hadoop.hive.ql.processors.CommandProcessor;
 import org.apache.hadoop.hive.ql.processors.CommandProcessorFactory;
 import org.apache.hadoop.hive.ql.processors.CommandProcessorResponse;
+import org.apache.hadoop.hive.ql.propertymodifier.RequestingIpWrapper;
+import org.apache.hadoop.hive.ql.propertymodifier.UserNameWrapper;
 import org.apache.hadoop.hive.ql.session.SessionState;
 import org.apache.hadoop.hive.ql.session.SessionState.LogHelper;
 import org.apache.hadoop.io.IOUtils;
@@ -115,6 +116,7 @@ public class CliDriver {
   }
 
   public int processCmd(String cmd) {
+    setThreadLocalProperties();
     CliSessionState ss = (CliSessionState) SessionState.get();
     ss.setLastCommand(cmd);
 
@@ -191,6 +193,15 @@ public class CliDriver {
 
     ss.resetThreadName();
     return ret;
+  }
+
+  private void setThreadLocalProperties() {
+    RequestingIpWrapper.INSTANCE.setRequestingIp(HostDetails.current().getHostAddress());
+    try {
+      UserNameWrapper.INSTANCE.setUsername(ShellUserFetcher.getLoggedInUserFromShell());
+    } catch (Throwable e) {
+      throw new RuntimeException("Couldn't fetch user from shell because " + e.getMessage());
+    }
   }
 
   /**
