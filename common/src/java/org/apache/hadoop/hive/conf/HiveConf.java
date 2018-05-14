@@ -3382,12 +3382,15 @@ public class HiveConf extends Configuration {
             "This is a performance optimization that forces the final FileSinkOperator to write to the blobstore.\n" +
             "See HIVE-15121 for details."),
 
-      /**
-       *Properties to enable feature of modifying job level properties at hive level
-       */
-    QUEUE_ENFORCER_CLASS("queue.enforcer.class", "org.apache.hadoop.hive.ql.propertymodifier.ReturnExistingQueue",
-                                 "Fully Qualified class name for concerete impl to be used to enforce queues"),
-    JOBNAME_ENRICHER_CLASS("jobname.enricher.class", "", "Fully qualified name of class to be used to enrich job name");
+    /**
+     * Properties to enable feature of modifying job level properties at hive level
+     */
+    QUEUE_ENFORCER_CLASS("queue.enforcer.class",
+        "org.apache.hadoop.hive.ql.propertymodifier.ReturnExistingQueue",
+        "Fully Qualified class name for concerete impl to be used to enforce queues"),
+    JOBNAME_ENRICHER_CLASS("jobname.enricher.class",
+        "org.apache.hadoop.hive.ql.propertymodifier.NoEnrichment",
+        "Fully qualified name of class to be used to enrich job name");
 
     public final String varname;
     public final String altName;
