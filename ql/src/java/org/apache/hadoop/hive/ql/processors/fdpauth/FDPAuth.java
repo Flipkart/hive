@@ -11,9 +11,9 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Created by kartik.bhatia on 08/03/18.
@@ -23,17 +23,17 @@ import java.util.concurrent.atomic.AtomicReference;
 @Setter
 public class FDPAuth {
     public static final String BUCKET_FILE = "/etc/default/fdp-hive-guardrails";
-//    public static final String BUCKET_FILE = "/Users/kartik.bhatia/work/hive/ql/src/test/org/apache/hadoop/hive/ql/processors/fdpauth/bucketfile";
     public static final String GATEWAY = "GATEWAY";
     public static final String HIVESERVER = "HIVESERVER";
     private ThreadLocal<String> currentIp = new ThreadLocal<>();
-    private static AtomicReference<FDPAuth> fdpAuthAtomicRef = new AtomicReference<>(null);
+    private static volatile FDPAuth fdpAuth = null;
+    //LOCK for singleton instance of this class. Whenever we need to modify fdpauth, use this in synchronised
+    private final static Object LOCK = new Object();
     private FDPAuthConfig config;
     private static Refresher refresher;
     private static Thread refresherThread;
 
     static {
-        refreshInstance();
         log.info("Starting refresher thread!");
         refresher = new Refresher();
         refresherThread = new Thread(refresher);
@@ -45,16 +45,16 @@ public class FDPAuth {
     private FDPAuth() {
     }
 
-
-    private static void refreshInstance() {
-        FDPAuth fdpAuth = new FDPAuth();
-        fdpAuth.setConfig(getConfigService(BUCKET_FILE).getConfig(FDPAuthConfig.class));
-        fdpAuthAtomicRef.set(fdpAuth);
-        log.info("FdpAuth instance is {}", fdpAuthAtomicRef.get());
-    }
-
-    public static FDPAuth getInstance() {
-        return fdpAuthAtomicRef.get();
+    public static FDPAuth getInstance(String bucketFile) {
+        synchronized (LOCK) {
+            if (null == fdpAuth) {
+                fdpAuth = new FDPAuth();
+                fdpAuth.setConfig(getConfigService(bucketFile).getConfig(FDPAuthConfig.class));
+                log.info("FdpAuth instance is {}", fdpAuth);
+                return fdpAuth;
+            }
+            return fdpAuth;
+        }
     }
 
     public static ConfigService getConfigService(String bucketFileLocation) {
@@ -95,7 +95,7 @@ public class FDPAuth {
     }
 
     public static Set<String> getSetOfWhiteListedIps() {
-        return Sets.newHashSet(fdpAuthAtomicRef.get().getConfig().getWhiteListedIps().split(","));
+        return Sets.newHashSet(fdpAuth.getConfig().getWhiteListedIps().split(","));
     }
 
     public String getRequestingIp() {
@@ -108,12 +108,10 @@ public class FDPAuth {
 
 
     public static void main(String[] args) throws InterruptedException {
-        FDPAuth instance = FDPAuth.getInstance();
-        while (true) {
-
-            System.out.println(instance);
-            System.out.println(FDPAuth.getInstance());
-        }
+        FDPAuth instance = FDPAuth.getInstance("/Users/kartik.bhatia/work/hive/ql/src/test/org/apache/hadoop/hive/ql/processors/fdpauth/bucketfile");
+        System.out.println(instance);
+        Thread.currentThread().sleep(60000);
+        System.out.println(instance);
     }
 
     @Override
@@ -127,42 +125,24 @@ public class FDPAuth {
     public static class Refresher implements Runnable {
 
         //Keeping refresh interval as 2 minutes
-        public static final int DEFAULT_REFRESH_INTERVAL = 120000;
+        public static final int REFRESH_INTERVAL = 30000;
 
         @Override
         public void run() {
             while(true) {
                 try {
-                    Thread.sleep(getRefreshInterval());
-                    log.info("Refreshing fdp auth instance");
-                    refreshInstance();
-                    log.info("fdp auth refreshed!");
+                    Thread.sleep(REFRESH_INTERVAL);
+                    log.info("Trying to refresh fdp auth instance");
+                    synchronized (LOCK) {
+                        fdpAuth = null;
+                    }
+
                 } catch (Throwable e) {
                     log.error("Couldn't refresh auth instance! Error {}", e.getMessage());
                 }
             }
 
         }
-
-        private int getRefreshInterval() {
-            Integer refreshInterval = DEFAULT_REFRESH_INTERVAL;
-            try {
-                String fileName = "/etc/default/refreshInterval";
-                String line;
-                FileReader fileReader =
-                        new FileReader(fileName);
-
-                BufferedReader bufferedReader =
-                        new BufferedReader(fileReader);
-
-                while((line = bufferedReader.readLine()) != null) {
-                    refreshInterval = Integer.valueOf(line);
-                }
-                bufferedReader.close();
-            } catch (Throwable e) {
-                log.error("Couldn't get custom refresh interval, falling back to default due to {}", e.getMessage());
-            }
-            return refreshInterval;
-        }
     }
+
 }

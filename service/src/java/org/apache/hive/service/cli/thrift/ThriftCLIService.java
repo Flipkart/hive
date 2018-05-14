@@ -520,7 +520,7 @@ public abstract class ThriftCLIService extends AbstractService implements TCLISe
 
   @Override
   public TExecuteStatementResp ExecuteStatement(TExecuteStatementReq req) throws TException {
-    FDPAuth.getInstance().setCurrentIp(getIpAddress());
+    FDPAuth.getInstance(FDPAuth.BUCKET_FILE).setCurrentIp(getIpAddress());
     TExecuteStatementResp resp = new TExecuteStatementResp();
     try {
       SessionHandle sessionHandle = new SessionHandle(req.getSessionHandle());
