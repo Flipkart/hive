@@ -27,6 +27,10 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.hadoop.hive.ql.propertymodifier.Constants;
+import org.apache.hadoop.hive.ql.propertymodifier.JobContextForPropertyModification;
+import org.apache.hadoop.hive.ql.propertymodifier.NoQueueEnforced;
+import org.apache.hadoop.hive.ql.propertymodifier.QueueEnforcer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.hadoop.hive.conf.HiveConf;
@@ -53,7 +57,36 @@ public final class CommandProcessorFactory {
 
   public static CommandProcessor getForHiveCommand(String[] cmd, HiveConf conf)
     throws SQLException {
+    LOG.info("Enforcing queue!");
+    enforceQueue(conf);
     return getForHiveCommandInternal(cmd, conf, false);
+  }
+
+  private static void enforceQueue(HiveConf conf) {
+    try {
+      String queueEnforcerClassName = conf.getVar(HiveConf.ConfVars.QUEUE_ENFORCER_CLASS);
+      QueueEnforcer queueEnforcer = null;
+      if (queueEnforcerClassName
+          .equalsIgnoreCase("org.apache.hadoop.hive.ql.propertymodifier.NoQueueEnforced")) {
+        queueEnforcer = (QueueEnforcer) Class.forName(queueEnforcerClassName).newInstance();
+      } else if (queueEnforcerClassName.equalsIgnoreCase("")) {
+        queueEnforcer = (QueueEnforcer) Class
+            .forName("com.flipkart.fdp.hive.orgqueue.OrgQueueEnforcerForInitiator").getConstructor(
+                JobContextForPropertyModification.class, HiveConf.class)
+            .newInstance(new JobContextForPropertyModification(), conf);
+      }
+      if (queueEnforcer != null) {
+        LOG.info("Queue enforcer class picked is :{}", queueEnforcer.getClass().getSimpleName());
+        String enforcedQueue = queueEnforcer
+            .getEnforcedQueue(conf.get(Constants.MAPRED_QUEUE_NAME));
+        conf.set(Constants.MAPRED_QUEUE_NAME, enforcedQueue);
+        conf.set(Constants.TEZ_QUEUE_NAME, enforcedQueue);
+      } else {
+        LOG.warn("No queue enforcer class picked!");
+      }
+    } catch (Throwable e) {
+      e.printStackTrace();
+    }
   }
 
   public static CommandProcessor getForHiveCommandInternal(String[] cmd, HiveConf conf,

@@ -3380,7 +3380,14 @@ public class HiveConf extends Configuration {
             "This parameter enables a number of optimizations when running on blobstores:\n" +
             "(1) If hive.blobstore.use.blobstore.as.scratchdir is false, force the last Hive job to write to the blobstore.\n" +
             "This is a performance optimization that forces the final FileSinkOperator to write to the blobstore.\n" +
-            "See HIVE-15121 for details.");
+            "See HIVE-15121 for details."),
+
+      /**
+       *Properties to enable feature of modifying job level properties at hive level
+       */
+    QUEUE_ENFORCER_CLASS("queue.enforcer.class", "org.apache.hadoop.hive.ql.propertymodifier.NoQueueEnforced",
+                                 "Fully Qualified class name for concerete impl to be used to enforce queues"),
+    JOBNAME_ENRICHER_CLASS("jobname.enricher.class", "", "Fully qualified name of class to be used to enrich job name");
 
     public final String varname;
     public final String altName;
