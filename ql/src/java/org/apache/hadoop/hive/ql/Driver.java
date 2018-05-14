@@ -2159,6 +2159,7 @@ public class Driver implements CommandProcessor {
       if (noName) {
         conf.set(MRJobConfig.JOB_NAME, jobname + "(" + tsk.getId() + ")");
       }
+      //TODO Add interface to enrich job name
       conf.set("mapreduce.workflow.node.name", tsk.getId());
       Utilities.setWorkflowAdjacencies(conf, plan);
       cxt.incCurJobNo(1);
