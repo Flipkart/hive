@@ -105,7 +105,7 @@ public class QueueFetcher {
         return result.toString();
     }
 
-    public static String getLoggedInUser() throws IOException, InterruptedException {
+    private static String getLoggedInUser() throws IOException, InterruptedException {
         Log.info("Getting logged in user!");
         Optional<String> sudoUser = Optional.fromNullable(System.getenv().get(SUDO_USER_PROP_KEY));
         Optional<String> user = Optional.fromNullable(System.getenv().get(USER));

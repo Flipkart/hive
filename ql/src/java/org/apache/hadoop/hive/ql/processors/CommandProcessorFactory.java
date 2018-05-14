@@ -50,8 +50,6 @@ public final class CommandProcessorFactory {
 
   public static final Logger LOG = LoggerFactory.getLogger(CommandProcessorFactory.class);
   public static final SessionState.LogHelper console = new SessionState.LogHelper(LOG);
-  public static final String MAPRED_JOB_NAME = "mapred.job.name";
-  public static final String HIVE_QUERY_NAME = "hive.query.name";
 
   private CommandProcessorFactory() {
     // prevent instantiation
@@ -175,48 +173,7 @@ public final class CommandProcessorFactory {
     }
   }
 
-  private static void setPropertiesHelper(FDPGatewayBoxConfiguration fdpGatewayBoxConfiguration, HiveConf conf) throws BillingOrgNotFoundException, IOException, InterruptedException {
-    setQueue(fdpGatewayBoxConfiguration, conf);
-    setJobName(conf);
-  }
-
-  private static void setJobName(HiveConf conf) throws IOException, InterruptedException {
-    Optional<String> mapredJobNameOptional = Optional.fromNullable(conf.get(MAPRED_JOB_NAME));
-    Optional<String> hiveQueryNameOptional = Optional.fromNullable(conf.get(HIVE_QUERY_NAME));
-    String loggedInuser = QueueFetcher.getLoggedInUser();
-    String mapredJobName = loggedInuser, hiveQueryName = loggedInuser;
-    if(mapredJobNameOptional.isPresent()){
-      LOG.info("Found prop {} to be set as {}, appending username {}", MAPRED_JOB_NAME, mapredJobNameOptional.get(), loggedInuser);
-      mapredJobName = checkExistingNameAndAppendUserIfNotAppended(mapredJobNameOptional.get(), loggedInuser);
-
-    }
-    if(hiveQueryNameOptional.isPresent()){
-      LOG.info("Found prop {} to be set as {}, appending username {}", HIVE_QUERY_NAME, mapredJobNameOptional.get(), loggedInuser);
-      hiveQueryName = checkExistingNameAndAppendUserIfNotAppended(hiveQueryNameOptional.get(), loggedInuser);
-    }
-    LOG.info("Setting property {} as {}", MAPRED_JOB_NAME, mapredJobName);
-    conf.set(MAPRED_JOB_NAME, mapredJobName);
-    LOG.info("Setting property {} as {}", HIVE_QUERY_NAME, hiveQueryName);
-    conf.set(HIVE_QUERY_NAME, hiveQueryName);
-  }
-
-  /**
-   * Since multiple commands can be used in session we need to check if we have already set the logged in user name
-   * @param existingPropertyVal
-   * @param loggedInuser
-   * @return
-     */
-  private static String checkExistingNameAndAppendUserIfNotAppended(String existingPropertyVal, String loggedInuser) {
-    String[] splitOfJobName = existingPropertyVal.split("-");
-    if(splitOfJobName[splitOfJobName.length -1].equals(loggedInuser)){
-      return existingPropertyVal;
-    }
-    else {
-      return existingPropertyVal + "-" + loggedInuser;
-    }
-  }
-
-  private static void setQueue(FDPGatewayBoxConfiguration fdpGatewayBoxConfiguration, HiveConf conf) throws BillingOrgNotFoundException {
+  private static void setPropertiesHelper(FDPGatewayBoxConfiguration fdpGatewayBoxConfiguration, HiveConf conf) throws BillingOrgNotFoundException{
     try {
       String queue = QueueFetcher.getQueueForLoggedInUser(fdpGatewayBoxConfiguration);
       if(queue==null){
