@@ -34,12 +34,10 @@ public class FDPAuth {
     private static Thread refresherThread;
 
     static {
-        log.info("Starting refresher thread!");
         refresher = new Refresher();
         refresherThread = new Thread(refresher);
         refresherThread.setName("refresher thread");
         refresherThread.start();
-        log.info("Started refresher thread!");
     }
 
     private FDPAuth() {
@@ -129,17 +127,16 @@ public class FDPAuth {
 
         @Override
         public void run() {
-            while(true) {
-                try {
-                    Thread.sleep(REFRESH_INTERVAL);
-                    log.info("Trying to refresh fdp auth instance");
-                    synchronized (LOCK) {
-                        fdpAuth = null;
-                    }
-
-                } catch (Throwable e) {
-                    log.error("Couldn't refresh auth instance! Error {}", e.getMessage());
+            try {
+                Thread.sleep(REFRESH_INTERVAL);
+                log.info("Trying to refresh fdp auth instance");
+                synchronized (LOCK) {
+                    fdpAuth = null;
                 }
+                FDPAuth.getInstance(BUCKET_FILE);
+
+            } catch (Throwable e) {
+                log.error("Couldn't refresh auth instance! Error {}", e.getMessage());
             }
 
         }
