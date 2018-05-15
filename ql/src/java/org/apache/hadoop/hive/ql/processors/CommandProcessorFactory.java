@@ -30,6 +30,8 @@ import java.util.Set;
 import org.apache.hadoop.hive.ql.propertymodifier.Constants;
 import org.apache.hadoop.hive.ql.propertymodifier.RequestingIpWrapper;
 import org.apache.hadoop.hive.ql.propertymodifier.QueueEnforcer;
+import org.apache.hadoop.hive.ql.propertymodifier.UserNameWrapper;
+import org.apache.parquet.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.hadoop.hive.conf.HiveConf;
@@ -73,9 +75,16 @@ public final class CommandProcessorFactory {
     }
     String enforcedQueue = queueEnforcer
         .getEnforcedQueue(conf.get(Constants.MAPRED_QUEUE_NAME),
-            conf.get(Constants.INITIATOR));
+            getInitiator(conf));
     conf.set(Constants.MAPRED_QUEUE_NAME, enforcedQueue);
     conf.set(Constants.TEZ_QUEUE_NAME, enforcedQueue);
+  }
+
+  private static String getInitiator(HiveConf conf) {
+    if (Strings.isNullOrEmpty(conf.get(Constants.INITIATOR))) {
+      return UserNameWrapper.INSTANCE.getUsername();
+    }
+    return conf.get(Constants.INITIATOR);
   }
 
   public static CommandProcessor getForHiveCommandInternal(String[] cmd, HiveConf conf,
