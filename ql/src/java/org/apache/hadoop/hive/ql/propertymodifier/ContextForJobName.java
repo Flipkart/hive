@@ -19,4 +19,24 @@ public class ContextForJobName {
     this.queryId = queryId;
     this.requestingIp = requestingIp;
   }
+
+  public String getCurrentStage() {
+    return currentStage;
+  }
+
+  public String getQueryId() {
+    return queryId;
+  }
+
+  public String getRequestingIp() {
+    return requestingIp;
+  }
+
+  public String getTotalJobs() {
+    return totalJobs;
+  }
+
+  public String getUsername() {
+    return username;
+  }
 }
