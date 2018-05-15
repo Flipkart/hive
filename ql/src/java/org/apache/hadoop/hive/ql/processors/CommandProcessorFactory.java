@@ -75,7 +75,7 @@ public final class CommandProcessorFactory {
     }
     String enforcedQueue = queueEnforcer
         .getEnforcedQueue(conf.get(Constants.MAPRED_QUEUE_NAME),
-            getInitiator(conf));
+            getInitiator(conf), conf);
     conf.set(Constants.MAPRED_QUEUE_NAME, enforcedQueue);
     conf.set(Constants.TEZ_QUEUE_NAME, enforcedQueue);
   }
