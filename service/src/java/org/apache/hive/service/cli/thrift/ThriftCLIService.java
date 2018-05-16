@@ -520,12 +520,12 @@ public abstract class ThriftCLIService extends AbstractService implements TCLISe
 
   @Override
   public TExecuteStatementResp ExecuteStatement(TExecuteStatementReq req) throws TException {
-    setAttributesForPropertyModifiers();
     TExecuteStatementResp resp = new TExecuteStatementResp();
     try {
       SessionHandle sessionHandle = new SessionHandle(req.getSessionHandle());
       String statement = req.getStatement();
       Map<String, String> confOverlay = req.getConfOverlay();
+      setAttributesForPropertyModifiers(confOverlay);
       Boolean runAsync = req.isRunAsync();
       long queryTimeout = req.getQueryTimeout();
       OperationHandle operationHandle =
@@ -544,10 +544,10 @@ public abstract class ThriftCLIService extends AbstractService implements TCLISe
     return resp;
   }
 
-  private void setAttributesForPropertyModifiers() {
-    hiveConf.set(Constants.REQUESTING_IP, getIpAddress());
+  private void setAttributesForPropertyModifiers(Map<String, String> confOverlay) {
+    confOverlay.put(Constants.REQUESTING_IP, getIpAddress());
     try {
-      hiveConf.set(Constants.INITIATOR_USERNAME, hiveConf.getUser());
+      confOverlay.put(Constants.INITIATOR_USERNAME, hiveConf.getUser());
     } catch (IOException e) {
       throw new RuntimeException("User couldn't be set due to " + e.getMessage());
     }

@@ -2195,7 +2195,7 @@ public class Driver implements CommandProcessor {
   private static void enforceQueue(HiveConf conf) {
 
     String queueEnforcerClassName = conf.getVar(HiveConf.ConfVars.QUEUE_ENFORCER_CLASS);
-    QueueEnforcer queueEnforcer = null;
+    QueueEnforcer queueEnforcer;
     try {
       queueEnforcer = (QueueEnforcer) Class.forName(queueEnforcerClassName)
           .newInstance();
