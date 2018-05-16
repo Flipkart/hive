@@ -28,10 +28,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.hadoop.hive.ql.propertymodifier.Constants;
-import org.apache.hadoop.hive.ql.propertymodifier.RequestingIpWrapper;
 import org.apache.hadoop.hive.ql.propertymodifier.QueueEnforcer;
-import org.apache.hadoop.hive.ql.propertymodifier.UserNameWrapper;
-import org.apache.parquet.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.hadoop.hive.conf.HiveConf;
@@ -58,33 +55,7 @@ public final class CommandProcessorFactory {
 
   public static CommandProcessor getForHiveCommand(String[] cmd, HiveConf conf)
     throws SQLException {
-    LOG.info("Enforcing queue!");
-    enforceQueue(conf);
     return getForHiveCommandInternal(cmd, conf, false);
-  }
-
-  private static void enforceQueue(HiveConf conf) {
-
-    String queueEnforcerClassName = conf.getVar(HiveConf.ConfVars.QUEUE_ENFORCER_CLASS);
-    QueueEnforcer queueEnforcer = null;
-    try {
-      queueEnforcer = (QueueEnforcer) Class.forName(queueEnforcerClassName)
-          .newInstance();
-    } catch (Throwable e) {
-      throw new RuntimeException("Couldn't enforce queue due to " + e.getMessage());
-    }
-    String enforcedQueue = queueEnforcer
-        .getEnforcedQueue(conf.get(Constants.MAPRED_QUEUE_NAME),
-            getInitiator(conf), conf);
-    conf.set(Constants.MAPRED_QUEUE_NAME, enforcedQueue);
-    conf.set(Constants.TEZ_QUEUE_NAME, enforcedQueue);
-  }
-
-  private static String getInitiator(HiveConf conf) {
-    if (Strings.isNullOrEmpty(conf.get(Constants.INITIATOR))) {
-      return UserNameWrapper.INSTANCE.getUsername();
-    }
-    return conf.get(Constants.INITIATOR);
   }
 
   public static CommandProcessor getForHiveCommandInternal(String[] cmd, HiveConf conf,

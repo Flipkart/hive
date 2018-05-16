@@ -105,10 +105,10 @@ import org.apache.hadoop.hive.ql.plan.HiveOperation;
 import org.apache.hadoop.hive.ql.plan.TableDesc;
 import org.apache.hadoop.hive.ql.processors.CommandProcessor;
 import org.apache.hadoop.hive.ql.processors.CommandProcessorResponse;
+import org.apache.hadoop.hive.ql.propertymodifier.Constants;
 import org.apache.hadoop.hive.ql.propertymodifier.ContextForJobName;
 import org.apache.hadoop.hive.ql.propertymodifier.JobNameEnricher;
-import org.apache.hadoop.hive.ql.propertymodifier.RequestingIpWrapper;
-import org.apache.hadoop.hive.ql.propertymodifier.UserNameWrapper;
+import org.apache.hadoop.hive.ql.propertymodifier.QueueEnforcer;
 import org.apache.hadoop.hive.ql.security.authorization.AuthorizationUtils;
 import org.apache.hadoop.hive.ql.security.authorization.HiveAuthorizationProvider;
 import org.apache.hadoop.hive.ql.security.authorization.plugin.HiveOperationType;
@@ -2168,6 +2168,8 @@ public class Driver implements CommandProcessor {
       cxt.incCurJobNo(1);
       console.printInfo("Launching Job " + cxt.getCurJobNo() + " out of " + jobs);
     }
+    LOG.info("Enforcing queue!");
+    enforceQueue(conf);
     tsk.initialize(queryState, plan, cxt, ctx.getOpContext());
     TaskResult tskRes = new TaskResult();
     TaskRunner tskRun = new TaskRunner(tsk, tskRes);
@@ -2190,6 +2192,30 @@ public class Driver implements CommandProcessor {
     return tskRun;
   }
 
+  private static void enforceQueue(HiveConf conf) {
+
+    String queueEnforcerClassName = conf.getVar(HiveConf.ConfVars.QUEUE_ENFORCER_CLASS);
+    QueueEnforcer queueEnforcer = null;
+    try {
+      queueEnforcer = (QueueEnforcer) Class.forName(queueEnforcerClassName)
+          .newInstance();
+    } catch (Throwable e) {
+      throw new RuntimeException("Couldn't enforce queue due to " + e.getMessage());
+    }
+    String enforcedQueue = queueEnforcer
+        .getEnforcedQueue(conf.get(Constants.MAPRED_QUEUE_NAME),
+            getInitiator(conf), conf);
+    conf.set(Constants.MAPRED_QUEUE_NAME, enforcedQueue);
+    conf.set(Constants.TEZ_QUEUE_NAME, enforcedQueue);
+  }
+
+  private static String getInitiator(HiveConf conf) {
+    if (Strings.isNullOrEmpty(conf.get(Constants.INITIATOR))) {
+      return conf.get(Constants.INITIATOR_USERNAME);
+    }
+    return conf.get(Constants.INITIATOR);
+  }
+
   private void enrichJobName(Task<? extends Serializable> tsk, String queryId, int jobs) {
     JobNameEnricher jobEnricher = null;
     try {
@@ -2199,7 +2225,7 @@ public class Driver implements CommandProcessor {
       throw new RuntimeException("Couldn't enrich job name due to " + e.getMessage());
     }
     ContextForJobName jobNameContext = new ContextForJobName(tsk.getId(), String.valueOf(jobs),
-        UserNameWrapper.INSTANCE.getUsername(), queryId, RequestingIpWrapper.INSTANCE.getRequestingIp());
+        conf.get(Constants.INITIATOR_USERNAME), queryId, conf.get(Constants.REQUESTING_IP));
     conf.set(MRJobConfig.JOB_NAME,
         jobEnricher.getEnrichedJobName(conf.get(MRJobConfig.JOB_NAME), jobNameContext));
   }

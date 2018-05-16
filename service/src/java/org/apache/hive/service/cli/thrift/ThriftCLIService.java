@@ -33,7 +33,7 @@ import org.apache.hadoop.hive.common.ServerUtils;
 import org.apache.hadoop.hive.common.log.ProgressMonitor;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
-import org.apache.hadoop.hive.ql.propertymodifier.UserNameWrapper;
+import org.apache.hadoop.hive.ql.propertymodifier.Constants;
 import org.apache.hadoop.hive.ql.session.SessionState;
 import org.apache.hadoop.hive.shims.HadoopShims.KerberosNameShim;
 import org.apache.hadoop.hive.shims.ShimLoader;
@@ -113,7 +113,6 @@ import org.apache.thrift.server.ServerContext;
 import org.apache.thrift.server.TServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.hadoop.hive.ql.propertymodifier.RequestingIpWrapper;
 
 
 /**
@@ -521,7 +520,7 @@ public abstract class ThriftCLIService extends AbstractService implements TCLISe
 
   @Override
   public TExecuteStatementResp ExecuteStatement(TExecuteStatementReq req) throws TException {
-    setThreadLocalProp();
+    setAttributesForPropertyModifiers();
     TExecuteStatementResp resp = new TExecuteStatementResp();
     try {
       SessionHandle sessionHandle = new SessionHandle(req.getSessionHandle());
@@ -545,10 +544,10 @@ public abstract class ThriftCLIService extends AbstractService implements TCLISe
     return resp;
   }
 
-  private void setThreadLocalProp() {
-    RequestingIpWrapper.INSTANCE.setRequestingIp(getIpAddress());
+  private void setAttributesForPropertyModifiers() {
+    hiveConf.set(Constants.REQUESTING_IP, getIpAddress());
     try {
-      UserNameWrapper.INSTANCE.setUsername(hiveConf.getUser());
+      hiveConf.set(Constants.INITIATOR_USERNAME, hiveConf.getUser());
     } catch (IOException e) {
       throw new RuntimeException("User couldn't be set due to " + e.getMessage());
     }
