@@ -525,7 +525,6 @@ public abstract class ThriftCLIService extends AbstractService implements TCLISe
       SessionHandle sessionHandle = new SessionHandle(req.getSessionHandle());
       String statement = req.getStatement();
       Map<String, String> confOverlay = req.getConfOverlay();
-      setAttributesForPropertyModifiers(confOverlay);
       Boolean runAsync = req.isRunAsync();
       long queryTimeout = req.getQueryTimeout();
       OperationHandle operationHandle =
@@ -542,15 +541,6 @@ public abstract class ThriftCLIService extends AbstractService implements TCLISe
       resp.setStatus(HiveSQLException.toTStatus(e));
     }
     return resp;
-  }
-
-  private void setAttributesForPropertyModifiers(Map<String, String> confOverlay) {
-    confOverlay.put(Constants.REQUESTING_IP, getIpAddress());
-    try {
-      confOverlay.put(Constants.INITIATOR_USERNAME, hiveConf.getUser());
-    } catch (IOException e) {
-      throw new RuntimeException("User couldn't be set due to " + e.getMessage());
-    }
   }
 
   @Override
