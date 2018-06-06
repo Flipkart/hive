@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.hadoop.hive.serde2.lazybinary.LazyBinaryStruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -172,10 +171,6 @@ public class StandardStructObjectInspector extends
     // so we have to do differently.
     boolean isArray = data.getClass().isArray();
     if (!isArray && !(data instanceof List)) {
-      if (data instanceof LazyBinaryStruct
-          && fieldRef.getFieldObjectInspector().getCategory() == Category.PRIMITIVE) {
-        return ((LazyBinaryStruct) data).getField(((MyField) fieldRef).fieldID);
-      }
       if (!warned) {
         LOG.warn("Invalid type for struct " + data.getClass());
         LOG.warn("ignoring similar errors.");

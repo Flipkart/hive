@@ -45,7 +45,6 @@ import org.apache.hadoop.hive.ql.history.HiveHistory;
 import org.apache.hadoop.hive.ql.metadata.Hive;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.ql.processors.SetProcessor;
-import org.apache.hadoop.hive.ql.propertymodifier.Constants;
 import org.apache.hadoop.hive.ql.session.SessionState;
 import org.apache.hadoop.hive.serde2.SerDeUtils;
 import org.apache.hadoop.hive.serde2.thrift.ThriftFormatter;
@@ -518,15 +517,10 @@ public class HiveSessionImpl implements HiveSession {
     return executeStatementInternal(statement, confOverlay, true, queryTimeout);
   }
 
-  private void setAttributesForPropertyModifiers(Map<String, String> confOverlay) {
-    confOverlay.put(Constants.REQUESTING_IP, getIpAddress());
-    confOverlay.put(Constants.INITIATOR_USERNAME, getUserName());
-  }
-
   private OperationHandle executeStatementInternal(String statement,
       Map<String, String> confOverlay, boolean runAsync, long queryTimeout) throws HiveSQLException {
     acquire(true, true);
-    setAttributesForPropertyModifiers(confOverlay);
+
     ExecuteStatementOperation operation = null;
     OperationHandle opHandle = null;
     try {
