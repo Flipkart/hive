@@ -113,11 +113,7 @@ public class CliDriver {
   }
 
   public int processCmd(String cmd) {
-<<<<<<< HEAD
-    FDPAuth.getInstance().setCurrentIp(HostDetails.current().getHostAddress());
-=======
     setAttributesForPropertyModifiers();
->>>>>>> fdp-master
     CliSessionState ss = (CliSessionState) SessionState.get();
     ss.setLastCommand(cmd);
 
