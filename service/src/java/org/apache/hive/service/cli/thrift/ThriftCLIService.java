@@ -33,7 +33,7 @@ import org.apache.hadoop.hive.common.ServerUtils;
 import org.apache.hadoop.hive.common.log.ProgressMonitor;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
-import org.apache.hadoop.hive.ql.propertymodifier.Constants;
+import org.apache.hadoop.hive.ql.processors.fdpauth.FDPAuth;
 import org.apache.hadoop.hive.ql.session.SessionState;
 import org.apache.hadoop.hive.shims.HadoopShims.KerberosNameShim;
 import org.apache.hadoop.hive.shims.ShimLoader;
@@ -520,6 +520,7 @@ public abstract class ThriftCLIService extends AbstractService implements TCLISe
 
   @Override
   public TExecuteStatementResp ExecuteStatement(TExecuteStatementReq req) throws TException {
+    FDPAuth.getInstance().setCurrentIp(getIpAddress());
     TExecuteStatementResp resp = new TExecuteStatementResp();
     try {
       SessionHandle sessionHandle = new SessionHandle(req.getSessionHandle());

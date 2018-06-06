@@ -42,7 +42,6 @@ import java.util.UUID;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.apache.commons.io.output.TeeOutputStream;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -1045,22 +1044,6 @@ public class SessionState {
     protected Logger LOG;
     protected boolean isSilent;
 
-    static class DecoratedStream extends PrintStream {
-      public DecoratedStream(PrintStream stream) {
-        super(getThreadLocalOpLogStream() == null
-            ? stream : new TeeOutputStream(stream, getThreadLocalOpLogStream()));
-      }
-
-      private static PrintStream getThreadLocalOpLogStream() {
-        if (OperationLog.getCurrentOperationLog() != null) {
-          if (OperationLog.getCurrentOperationLog().getPrintStream() != null) {
-            return OperationLog.getCurrentOperationLog().getPrintStream();
-          }
-        }
-        return null;
-      }
-    }
-
     public LogHelper(Logger LOG) {
       this(LOG, false);
     }
@@ -1072,32 +1055,27 @@ public class SessionState {
 
     public PrintStream getOutStream() {
       SessionState ss = SessionState.get();
-      return new DecoratedStream(((ss != null)
-          && (ss.out != null)) ? ss.out : System.out);
+      return ((ss != null) && (ss.out != null)) ? ss.out : System.out;
     }
 
     public static PrintStream getInfoStream() {
       SessionState ss = SessionState.get();
-      return new DecoratedStream(((ss != null)
-          && (ss.info != null)) ? ss.info : getErrStream());
+      return ((ss != null) && (ss.info != null)) ? ss.info : getErrStream();
     }
 
     public static PrintStream getErrStream() {
       SessionState ss = SessionState.get();
-      return new DecoratedStream(((ss != null)
-          && (ss.err != null)) ? ss.err : System.err);
+      return ((ss != null) && (ss.err != null)) ? ss.err : System.err;
     }
 
     public PrintStream getChildOutStream() {
       SessionState ss = SessionState.get();
-      return new DecoratedStream(((ss != null)
-          && (ss.childOut != null)) ? ss.childOut : System.out);
+      return ((ss != null) && (ss.childOut != null)) ? ss.childOut : System.out;
     }
 
     public PrintStream getChildErrStream() {
       SessionState ss = SessionState.get();
-      return new DecoratedStream(((ss != null)
-          && (ss.childErr != null)) ? ss.childErr : System.err);
+      return ((ss != null) && (ss.childErr != null)) ? ss.childErr : System.err;
     }
 
     public boolean getIsSilent() {

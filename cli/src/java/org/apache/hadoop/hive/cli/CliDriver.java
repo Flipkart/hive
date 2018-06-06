@@ -70,10 +70,9 @@ import org.apache.hadoop.hive.ql.exec.FunctionRegistry;
 import org.apache.hadoop.hive.ql.exec.mr.HadoopJobExecHelper;
 import org.apache.hadoop.hive.ql.exec.tez.TezJobExecHelper;
 import org.apache.hadoop.hive.ql.parse.HiveParser;
-import org.apache.hadoop.hive.ql.processors.CommandProcessor;
-import org.apache.hadoop.hive.ql.processors.CommandProcessorFactory;
-import org.apache.hadoop.hive.ql.processors.CommandProcessorResponse;
-import org.apache.hadoop.hive.ql.propertymodifier.Constants;
+import org.apache.hadoop.hive.ql.processors.*;
+import org.apache.hadoop.hive.ql.processors.fdpauth.FDPAuth;
+import org.apache.hadoop.hive.ql.processors.fdpauth.HostDetails;
 import org.apache.hadoop.hive.ql.session.SessionState;
 import org.apache.hadoop.hive.ql.session.SessionState.LogHelper;
 import org.apache.hadoop.io.IOUtils;
@@ -113,7 +112,7 @@ public class CliDriver {
   }
 
   public int processCmd(String cmd) {
-    setAttributesForPropertyModifiers();
+    FDPAuth.getInstance().setCurrentIp(HostDetails.current().getHostAddress());
     CliSessionState ss = (CliSessionState) SessionState.get();
     ss.setLastCommand(cmd);
 
@@ -190,15 +189,6 @@ public class CliDriver {
 
     ss.resetThreadName();
     return ret;
-  }
-
-  private void setAttributesForPropertyModifiers() {
-    conf.set(Constants.REQUESTING_IP, HostDetails.current().getHostAddress());
-    try {
-      conf.set(Constants.INITIATOR_USERNAME, ShellUserFetcher.getLoggedInUserFromShell());
-    } catch (Throwable e) {
-      throw new RuntimeException("User couldn't be set due to " + e.getMessage());
-    }
   }
 
   /**

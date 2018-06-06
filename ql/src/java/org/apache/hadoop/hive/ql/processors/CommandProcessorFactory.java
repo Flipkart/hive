@@ -27,8 +27,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.hadoop.hive.ql.propertymodifier.Constants;
-import org.apache.hadoop.hive.ql.propertymodifier.QueueEnforcer;
+import org.apache.hadoop.hive.ql.processors.fdpauth.FDPPropertySetter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.hadoop.hive.conf.HiveConf;
@@ -41,6 +40,8 @@ import org.apache.hadoop.hive.ql.session.SessionState;
  *
  */
 public final class CommandProcessorFactory {
+
+  public static final Logger LOG = LoggerFactory.getLogger(CommandProcessorFactory.class);
 
   private CommandProcessorFactory() {
     // prevent instantiation
@@ -55,6 +56,8 @@ public final class CommandProcessorFactory {
 
   public static CommandProcessor getForHiveCommand(String[] cmd, HiveConf conf)
     throws SQLException {
+    LOG.info("Beginning to set user level properties!");
+    FDPPropertySetter.setUserSpecificProperties(conf);
     return getForHiveCommandInternal(cmd, conf, false);
   }
 
@@ -110,7 +113,7 @@ public final class CommandProcessorFactory {
     }
   }
 
-  static Logger LOG = LoggerFactory.getLogger(CommandProcessorFactory.class);
+
   public static CommandProcessor get(String[] cmd, HiveConf conf)
       throws SQLException {
     CommandProcessor result = getForHiveCommand(cmd, conf);

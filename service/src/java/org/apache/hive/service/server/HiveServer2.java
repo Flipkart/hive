@@ -477,7 +477,7 @@ public class HiveServer2 extends CompositeService {
     if ((thriftCLIService == null) || (thriftCLIService.getServerIPAddress() == null)) {
       throw new Exception("Unable to get the server address; it hasn't been initialized yet.");
     }
-    return thriftCLIService.getServerIPAddress().getHostAddress() + ":"
+    return thriftCLIService.getServerIPAddress().getHostName() + ":"
         + thriftCLIService.getPortNumber();
   }
 
@@ -485,7 +485,7 @@ public class HiveServer2 extends CompositeService {
     if ((thriftCLIService == null) || (thriftCLIService.getServerIPAddress() == null)) {
       throw new Exception("Unable to get the server address; it hasn't been initialized yet.");
     }
-    return thriftCLIService.getServerIPAddress().getHostAddress();
+    return thriftCLIService.getServerIPAddress().getHostName();
   }
 
   @Override
