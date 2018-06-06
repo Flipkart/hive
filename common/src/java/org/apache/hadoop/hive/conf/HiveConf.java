@@ -786,6 +786,9 @@ public class HiveConf extends Configuration {
     METASTORE_BATCH_RETRIEVE_OBJECTS_MAX(
         "hive.metastore.batch.retrieve.table.partition.max", 1000,
         "Maximum number of objects that metastore internally retrieves in one batch."),
+    METASTORE_SCHEME_HANDLER_CLASSES(
+        "hive.metastore.client.scheme.handlers", null,
+        "Scheme handlers that can interpret metastore uris other than the ones starting with thrift"),
 
     METASTORE_INIT_HOOKS("hive.metastore.init.hooks", "",
         "A comma separated list of hooks to be invoked at the beginning of HMSHandler initialization. \n" +
@@ -3377,7 +3380,17 @@ public class HiveConf extends Configuration {
             "This parameter enables a number of optimizations when running on blobstores:\n" +
             "(1) If hive.blobstore.use.blobstore.as.scratchdir is false, force the last Hive job to write to the blobstore.\n" +
             "This is a performance optimization that forces the final FileSinkOperator to write to the blobstore.\n" +
-            "See HIVE-15121 for details.");
+            "See HIVE-15121 for details."),
+
+    /**
+     * Properties to enable feature of modifying job level properties at hive level
+     */
+    QUEUE_ENFORCER_CLASS("queue.enforcer.class",
+        "org.apache.hadoop.hive.ql.propertymodifier.ReturnExistingQueue",
+        "Fully Qualified class name for concerete impl to be used to enforce queues"),
+    JOBNAME_ENRICHER_CLASS("jobname.enricher.class",
+        "org.apache.hadoop.hive.ql.propertymodifier.NoEnrichment",
+        "Fully qualified name of class to be used to enrich job name");
 
     public final String varname;
     public final String altName;
