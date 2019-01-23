@@ -840,7 +840,7 @@ public class BeeLine implements Closeable {
      */
 //    user = cl.getOptionValue("n");
     try {
-      user = ShellUserFetcher.getLoggedInUserFromShell();
+      user = ExtractShellUtils.getLoggedInUserFromShell();
     } catch (Throwable e) {
       throw new RuntimeException("User couldn't be set due to " + e.getMessage());
     }

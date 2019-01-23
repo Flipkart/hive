@@ -4,7 +4,7 @@ import com.google.common.base.Optional;
 
 import java.io.IOException;
 
-public class ShellUserFetcher
+public class ExtractShellUtils
 {
 
   public static final String SUDO_USER_PROP_KEY = "SUDO_USER";
@@ -12,12 +12,13 @@ public class ShellUserFetcher
 
   public static String getLoggedInUserFromShell() throws IOException, InterruptedException {
     Optional<String> sudoUser = Optional.fromNullable(System.getenv().get(SUDO_USER_PROP_KEY));
-    Optional<String> user = Optional.fromNullable(System.getenv().get(USER));
     if (sudoUser.isPresent()) {
       return sudoUser.get();
-    } else if (user.isPresent()) {
+    }
+    Optional<String> user = Optional.fromNullable(System.getenv().get(USER));
+    if (user.isPresent()) {
       return user.get();
     }
-    return null;
+    throw new RuntimeException("Unable to identify User");
   }
 }
