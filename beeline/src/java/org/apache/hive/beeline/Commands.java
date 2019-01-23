@@ -1621,7 +1621,7 @@ public class Commands {
       }
     }
 
-    beeLine.info("Connecting to " + url);
+    beeLine.debug("Connecting to " + url);
     if (Utils.parsePropertyFromUrl(url, JdbcConnectionParams.AUTH_PRINCIPAL) == null) {
       String urlForPrompt = url.substring(0, url.contains(";") ? url.indexOf(';') : url.length());
       if (username == null) {

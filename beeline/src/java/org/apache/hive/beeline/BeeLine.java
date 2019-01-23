@@ -835,7 +835,15 @@ public class BeeLine implements Closeable {
 
     driver = cl.getOptionValue("d");
     auth = cl.getOptionValue("a");
-    user = cl.getOptionValue("n");
+    /*
+    Fetching user from system properties to check who is loggedin
+     */
+//    user = cl.getOptionValue("n");
+    try {
+      user = ShellUserFetcher.getLoggedInUserFromShell();
+    } catch (Throwable e) {
+      throw new RuntimeException("User couldn't be set due to " + e.getMessage());
+    }
     getOpts().setAuthType(auth);
     if (cl.hasOption("w")) {
       pass = obtainPasswordFromFile(cl.getOptionValue("w"));
