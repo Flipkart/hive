@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+beeline -u "jdbc:hive2://prod-fdphadoop-bheema-zk-0001:2181,prod-fdphadoop-bheema-zk-0002:2181,prod-fdphadoop-bheema-zk-0003:2181,prod-fdphadoop-bheema-zk-0004:2181,prod-fdphadoop-bheema-zk-0005:2181/;transportMode=http;httpPath=cliservice;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver_processing" -i /usr/local/fdp-infra-hive/bin/addJars.hql
