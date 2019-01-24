@@ -10,7 +10,7 @@ public class ExtractShellUtils
   public static final String SUDO_USER_PROP_KEY = "SUDO_USER";
   public static final String USER = "USER";
 
-  public static String getLoggedInUserFromShell() throws IOException, InterruptedException {
+  public static String getLoggedInUserFromShell() {
     Optional<String> sudoUser = Optional.fromNullable(System.getenv().get(SUDO_USER_PROP_KEY));
     if (sudoUser.isPresent()) {
       return sudoUser.get();

@@ -839,11 +839,7 @@ public class BeeLine implements Closeable {
     Fetching user from system properties to check who is loggedin
      */
 //    user = cl.getOptionValue("n");
-    try {
-      user = ExtractShellUtils.getLoggedInUserFromShell();
-    } catch (Throwable e) {
-      throw new RuntimeException("User couldn't be set due to " + e.getMessage());
-    }
+    user = ExtractShellUtils.getLoggedInUserFromShell();
     getOpts().setAuthType(auth);
     if (cl.hasOption("w")) {
       pass = obtainPasswordFromFile(cl.getOptionValue("w"));
