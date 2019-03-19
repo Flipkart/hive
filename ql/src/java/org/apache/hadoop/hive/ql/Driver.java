@@ -952,7 +952,7 @@ public class Driver implements CommandProcessor {
         Iterator<JsonNode> file = node.elements();
         while (file.hasNext()) {
           JsonNode al = file.next();
-          colAccessInfo.add(tableDesc.getTableName(), rowTypeInfo.getAllStructFieldNames().get(cnt) + "." + al.textValue());
+          colAccessInfo.add(tableDesc.getTableName().replace('.','@'), rowTypeInfo.getAllStructFieldNames().get(cnt) + "." + al.textValue());
         }
       }
       cnt++;
