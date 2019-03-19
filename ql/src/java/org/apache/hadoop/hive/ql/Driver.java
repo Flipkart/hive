@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -38,6 +39,8 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Iterables;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -124,6 +127,7 @@ import org.apache.hadoop.hive.ql.session.SessionState.LogHelper;
 import org.apache.hadoop.hive.serde.serdeConstants;
 import org.apache.hadoop.hive.serde2.ByteStream;
 import org.apache.hadoop.hive.serde2.SerDeUtils;
+import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.typeinfo.StructTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoFactory;
@@ -134,6 +138,7 @@ import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapreduce.MRJobConfig;
 import org.apache.hive.common.util.ShutdownHookManager;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -734,7 +739,8 @@ public class Driver implements CommandProcessor {
    * @throws AuthorizationException
    */
   public static void doAuthorization(HiveOperation op, BaseSemanticAnalyzer sem, String command)
-      throws HiveException, AuthorizationException {
+          throws HiveException, AuthorizationException, IOException
+  {
     SessionState ss = SessionState.get();
     Hive db = sem.getDb();
 
@@ -915,7 +921,8 @@ public class Driver implements CommandProcessor {
     }
   }
 
-  private static void addStructColumns(BaseSemanticAnalyzer sem, ColumnAccessInfo colAccessInfo) {
+  private static void addStructColumns(BaseSemanticAnalyzer sem, ColumnAccessInfo colAccessInfo) throws IOException
+  {
     TableDesc tableDesc = sem.getFetchTask().getTblDesc();
     String columnTypeProperty = tableDesc.getProperties().getProperty(serdeConstants.LIST_COLUMN_TYPES);
     String columnNameProperty = tableDesc.getProperties().getProperty(serdeConstants.LIST_COLUMNS);
@@ -935,9 +942,20 @@ public class Driver implements CommandProcessor {
     }
     StructTypeInfo rowTypeInfo = (StructTypeInfo) TypeInfoFactory.getStructTypeInfo(columnNames, columnTypes);
     LOG.info("Following are the struct field Names : " + rowTypeInfo.getAllStructFieldNames());
-    for(String column : rowTypeInfo.getAllStructFieldNames()) {
-      LOG.info("Adding Column : " + column);
-      colAccessInfo.add(tableDesc.getTableName(), column);
+
+    int cnt = 0;
+    for (TypeInfo value: rowTypeInfo.getAllStructFieldTypeInfos()) {
+      if(value.getCategory().equals(ObjectInspector.Category.STRUCT)) {
+        JSONObject jsnobject = new JSONObject(value);
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode node = objectMapper.readTree(jsnobject.get("allStructFieldNames").toString());
+        Iterator<JsonNode> file = node.elements();
+        while (file.hasNext()) {
+          JsonNode al = file.next();
+          colAccessInfo.add(tableDesc.getTableName(), rowTypeInfo.getAllStructFieldNames().get(cnt) + "." + al.textValue());
+        }
+      }
+      cnt++;
     }
   }
 
