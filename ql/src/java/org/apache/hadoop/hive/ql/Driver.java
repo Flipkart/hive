@@ -25,8 +25,10 @@ import java.io.PrintStream;
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -37,6 +39,8 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Iterables;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -120,13 +124,21 @@ import org.apache.hadoop.hive.ql.session.OperationLog;
 import org.apache.hadoop.hive.ql.session.OperationLog.LoggingLevel;
 import org.apache.hadoop.hive.ql.session.SessionState;
 import org.apache.hadoop.hive.ql.session.SessionState.LogHelper;
+import org.apache.hadoop.hive.serde.serdeConstants;
 import org.apache.hadoop.hive.serde2.ByteStream;
+import org.apache.hadoop.hive.serde2.SerDeUtils;
+import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
+import org.apache.hadoop.hive.serde2.typeinfo.StructTypeInfo;
+import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
+import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoFactory;
+import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
 import org.apache.hadoop.hive.shims.Utils;
 import org.apache.hadoop.mapred.ClusterStatus;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapreduce.MRJobConfig;
 import org.apache.hive.common.util.ShutdownHookManager;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -727,7 +739,8 @@ public class Driver implements CommandProcessor {
    * @throws AuthorizationException
    */
   public static void doAuthorization(HiveOperation op, BaseSemanticAnalyzer sem, String command)
-      throws HiveException, AuthorizationException {
+          throws HiveException, AuthorizationException, IOException
+  {
     SessionState ss = SessionState.get();
     Hive db = sem.getDb();
 
@@ -756,11 +769,17 @@ public class Driver implements CommandProcessor {
     if (ss.isAuthorizationModeV2()) {
       // get mapping of tables to columns used
       ColumnAccessInfo colAccessInfo = sem.getColumnAccessInfo();
+
+      // add Struct type columns
+      addStructColumns(sem, colAccessInfo);
+
       // colAccessInfo is set only in case of SemanticAnalyzer
       Map<String, List<String>> selectTab2Cols = colAccessInfo != null ? colAccessInfo
           .getTableToColumnAccessMap() : null;
+      LOG.info("selectTab2Cols field Names : " + selectTab2Cols);
       Map<String, List<String>> updateTab2Cols = sem.getUpdateColumnAccessInfo() != null ?
           sem.getUpdateColumnAccessInfo().getTableToColumnAccessMap() : null;
+      LOG.info("updateTab2Cols field Names : " + updateTab2Cols);
       doAuthorizationV2(ss, op, inputs, outputs, command, selectTab2Cols, updateTab2Cols);
      return;
     }
@@ -899,6 +918,44 @@ public class Driver implements CommandProcessor {
         }
       }
 
+    }
+  }
+
+  private static void addStructColumns(BaseSemanticAnalyzer sem, ColumnAccessInfo colAccessInfo) throws IOException
+  {
+    TableDesc tableDesc = sem.getFetchTask().getTblDesc();
+    String columnTypeProperty = tableDesc.getProperties().getProperty(serdeConstants.LIST_COLUMN_TYPES);
+    String columnNameProperty = tableDesc.getProperties().getProperty(serdeConstants.LIST_COLUMNS);
+    final String columnNameDelimiter = tableDesc.getProperties().containsKey(serdeConstants.COLUMN_NAME_DELIMITER) ? tableDesc.getProperties()
+            .getProperty(serdeConstants.COLUMN_NAME_DELIMITER) : String.valueOf(SerDeUtils.COMMA);
+    List<String> columnNames;
+    if (columnNameProperty.length() == 0) {
+      columnNames = new ArrayList<>();
+    } else {
+      columnNames = Arrays.asList(columnNameProperty.split(columnNameDelimiter));
+    }
+    List<TypeInfo> columnTypes;
+    if (columnTypeProperty.length() == 0) {
+      columnTypes = new ArrayList<>();
+    } else {
+      columnTypes = TypeInfoUtils.getTypeInfosFromTypeString(columnTypeProperty);
+    }
+    StructTypeInfo rowTypeInfo = (StructTypeInfo) TypeInfoFactory.getStructTypeInfo(columnNames, columnTypes);
+    LOG.info("Following are the struct field Names : " + rowTypeInfo.getAllStructFieldNames());
+
+    int cnt = 0;
+    for (TypeInfo value: rowTypeInfo.getAllStructFieldTypeInfos()) {
+      if(value.getCategory().equals(ObjectInspector.Category.STRUCT)) {
+        JSONObject jsnobject = new JSONObject(value);
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode node = objectMapper.readTree(jsnobject.get("allStructFieldNames").toString());
+        Iterator<JsonNode> file = node.elements();
+        while (file.hasNext()) {
+          JsonNode al = file.next();
+          colAccessInfo.add(tableDesc.getTableName().replace('.','@'), rowTypeInfo.getAllStructFieldNames().get(cnt) + "." + al.textValue());
+        }
+      }
+      cnt++;
     }
   }
 
