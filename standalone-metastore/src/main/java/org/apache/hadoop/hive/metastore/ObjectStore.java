@@ -9021,10 +9021,10 @@ public class ObjectStore implements RawStore, Configurable {
   @Override
   public void verifySchema() throws MetaException {
     // If the schema version is already checked, then go ahead and use this metastore
-    if (isSchemaVerified.get()) {
-      return;
-    }
-    checkSchema();
+//    if (isSchemaVerified.get()) {
+//      return;
+//    }
+//    checkSchema();
   }
 
   public static void setSchemaVerified(boolean val) {
