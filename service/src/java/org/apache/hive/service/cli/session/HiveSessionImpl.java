@@ -529,8 +529,8 @@ public class HiveSessionImpl implements HiveSession {
   }
 
   private void setAttributesForPropertyModifiers(Map<String, String> confOverlay) {
-    confOverlay.put(Constants.REQUESTING_IP, getIpAddress());
-    confOverlay.put(Constants.INITIATOR_USERNAME, getUserName());
+    confOverlay.put(Constants.REQUESTING_IP, "127.0.0.1");
+    confOverlay.put(Constants.INITIATOR_USERNAME, "root");
   }
 
   private OperationHandle executeStatementInternal(String statement,
