@@ -188,6 +188,8 @@ public class TableDesc implements Serializable, Cloneable {
     return properties.getProperty(hive_metastoreConstants.TABLE_BUCKETING_VERSION) != null;
   }
   public int getBucketingVersion() {
+    LOG.info("BUCKETING-DEBUG-LOG-TableDesc-getBucketingVersion-191-LOG:" + String.valueOf(properties.getProperty(hive_metastoreConstants.TABLE_BUCKETING_VERSION)));
+    LOG.info("BUCKETING-DEBUG-LOG-TableDesc-getBucketingVersion-192-LOG:" + properties.toString());
     return Utilities.getBucketingVersion(
         properties.getProperty(hive_metastoreConstants.TABLE_BUCKETING_VERSION));
   }

@@ -24,6 +24,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.hadoop.hive.ql.optimizer.metainfo.annotation.OpTraitsRulesProcFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.hadoop.hive.ql.CompilationOpContext;
@@ -88,7 +89,8 @@ import com.google.common.base.Preconditions;
  */
 @SuppressWarnings({ "rawtypes", "unchecked" })
 public final class OperatorFactory {
-  protected static transient final Logger LOG = LoggerFactory.getLogger(OperatorFactory.class);
+  private static final Logger LOG = LoggerFactory.getLogger(
+      OperatorFactory.class);
   private static final IdentityHashMap<Class<? extends OperatorDesc>,
     Class<? extends Operator<? extends OperatorDesc>>> opvec = new IdentityHashMap<>();
   private static final IdentityHashMap<Class<? extends OperatorDesc>,
@@ -266,6 +268,7 @@ public final class OperatorFactory {
     ret.setConf(conf);
 
     // Set the bucketing Version
+    LOG.info("BUCKETING-DEBUG-LOG-Operator-setBucketingVersion-1625-LOG:" + oplist0.getBucketingVersion());
     ret.setBucketingVersion(oplist0.getBucketingVersion());
 
     // Add the new operator as child of each of the passed in operators

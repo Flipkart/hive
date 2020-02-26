@@ -177,7 +177,8 @@ public class HCatTable {
     }
 
     if (newTable.getParameters().get("bucketing_version") == null) {
-      newTable.putToParameters("bucketing_version", "2");
+      LOG.info("BUCKETING-DEBUG-LOG-HCatTable-1-LOG:" + "2");
+      newTable.putToParameters("bucketing_version", "1");
     }
 
     newTable.setSd(sd);

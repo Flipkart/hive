@@ -217,16 +217,19 @@ public class FixedBucketPruningOptimizer extends Transform {
           return;
         }
         Object convCols[] = new Object[] {conv.convert(literal)};
+        LOG.info("BUCKETING-DEBUG-LOG-FixedBucketPruingOptimizer-generatePredicate-220-LOG:" + bucketingVersion);
         int n = bucketingVersion == 2 ?
             ObjectInspectorUtils.getBucketNumber(convCols, new ObjectInspector[]{constOI}, numBuckets) :
             ObjectInspectorUtils.getBucketNumberOld(convCols, new ObjectInspector[]{constOI}, numBuckets);
         bs.set(n);
+
         if (bucketingVersion == 1 && ctxt.isCompat()) {
           int h = ObjectInspectorUtils.getBucketHashCodeOld(convCols, new ObjectInspector[]{constOI});
           // -ve hashcodes had conversion to positive done in different ways in the past
           // abs() is now obsolete and all inserts now use & Integer.MAX_VALUE 
           // the compat mode assumes that old data could've been loaded using the other conversion
           n = ObjectInspectorUtils.getBucketNumber(Math.abs(h), numBuckets);
+          LOG.info("BUCKETING-DEBUG-LOG-FixedBucketPruingOptimizer-generatePredicate-232-LOG:" + n);
           bs.set(n);
         }
       }

@@ -187,6 +187,7 @@ public class ConvertJoinMapJoin implements NodeProcessor {
     MapJoinOperator mapJoinOp = convertJoinMapJoin(joinOp, context, mapJoinConversionPos, true);
     // map join operator by default has no bucket cols and num of reduce sinks
     // reduced by 1
+    LOG.info("BUCKETING-DEBUG-LOG-ConvertJoinMapJoin-process-190-LOG:" + joinOp.getOpTraits().getBucketingVersion());
     mapJoinOp.setOpTraits(new OpTraits(null, -1, null,
         joinOp.getOpTraits().getNumReduceSinks(), joinOp.getOpTraits().getBucketingVersion()));
     preserveOperatorInfos(mapJoinOp, joinOp, context);
@@ -412,6 +413,7 @@ public class ConvertJoinMapJoin implements NodeProcessor {
     OpTraits opTraits = new OpTraits(joinOp.getOpTraits().getBucketColNames(), numBuckets,
       joinOp.getOpTraits().getSortCols(), numReduceSinks,
       joinOp.getOpTraits().getBucketingVersion());
+    LOG.info("BUCKETING-DEBUG-LOG-ConvertJoinMapJoin-convertJoinSMBJoin-416-LOG:" + joinOp.getOpTraits().getBucketingVersion());
     mergeJoinOp.setOpTraits(opTraits);
     preserveOperatorInfos(mergeJoinOp, joinOp, context);
 
@@ -480,6 +482,7 @@ public class ConvertJoinMapJoin implements NodeProcessor {
     currentOp.setOpTraits(new OpTraits(opTraits.getBucketColNames(),
       opTraits.getNumBuckets(), opTraits.getSortCols(), opTraits.getNumReduceSinks(),
             opTraits.getBucketingVersion()));
+    LOG.info("BUCKETING-DEBUG-LOG-ConvertJoinMapJoin-convertJoinSMBJoin-485-LOG:" + opTraits.getBucketingVersion());
     for (Operator<? extends OperatorDesc> childOp : currentOp.getChildOperators()) {
       if ((childOp instanceof ReduceSinkOperator) || (childOp instanceof GroupByOperator)) {
         break;
@@ -531,6 +534,7 @@ public class ConvertJoinMapJoin implements NodeProcessor {
     joinDesc.setBucketMapJoin(true);
 
     // we can set the traits for this join operator
+    LOG.info("BUCKETING-DEBUG-LOG-ConvertJoinMapJoin-convertJoinBucketMapJoin-537-LOG:" + opTraits.getBucketingVersion());
     opTraits = new OpTraits(joinOp.getOpTraits().getBucketColNames(),
         tezBucketJoinProcCtx.getNumBuckets(), null, joinOp.getOpTraits().getNumReduceSinks(),
         joinOp.getOpTraits().getBucketingVersion());
@@ -690,6 +694,7 @@ public class ConvertJoinMapJoin implements NodeProcessor {
       if (op instanceof TableScanOperator) {
         int localVersion = ((TableScanOperator)op).getConf().
                 getTableMetadata().getBucketingVersion();
+        LOG.info("BUCKETING-DEBUG-LOG-ConvertJoinMapJoin-convertJoinBucketMapJoin-696-LOG:" + localVersion);
         if (bucketingVersion == -1) {
           bucketingVersion = localVersion;
         } else if (bucketingVersion != localVersion) {
@@ -1286,6 +1291,7 @@ public class ConvertJoinMapJoin implements NodeProcessor {
         //   reduce sink, which should have bucket columns based on the join keys.
         // numBuckets: set to number of reducers
         // sortCols: This is an unsorted join - no sort cols
+        LOG.info("BUCKETING-DEBUG-LOG-ConvertJoinMapJoin-convertJoinBucketMapJoin-537-LOG:" + joinOp.getOpTraits().getBucketingVersion());
         OpTraits opTraits = new OpTraits(
             joinOp.getOpTraits().getBucketColNames(),
             numReducers,

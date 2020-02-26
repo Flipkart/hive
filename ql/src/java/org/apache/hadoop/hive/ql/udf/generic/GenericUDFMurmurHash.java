@@ -51,6 +51,7 @@ public class GenericUDFMurmurHash extends GenericUDF {
     for(int i = 0; i < arguments.length; i++) {
       fieldValues[i] = arguments[i].get();
     }
+    //LOG.info("BUCKETING-DEBUG-LOG-GenericUDFMurMur-evaluate-54-LOG:" + !vectorDesc.getIsAcidChange());
     int r = ObjectInspectorUtils.getBucketHashCode(fieldValues, argumentOIs);
     result.set(r);
     return result;

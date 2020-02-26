@@ -190,6 +190,7 @@ public class Table implements Serializable {
       t.setCreateTime((int) (System.currentTimeMillis() / 1000));
     }
     // Explictly set the bucketing version
+    LOG.info("BUCKETING-DEBUG-LOG-Table-getEmptyTable-1-LOG:" + String.valueOf("1"));
     t.getParameters().put(hive_metastoreConstants.TABLE_BUCKETING_VERSION,
         "1");
     return t;
@@ -462,6 +463,7 @@ public class Table implements Serializable {
   }
 
   public int getBucketingVersion() {
+    LOG.info("BUCKETING-DEBUG-LOG-Table-getBucketingVersion-466-LOG:" + String.valueOf(getProperty(hive_metastoreConstants.TABLE_BUCKETING_VERSION)));
     return Utilities.getBucketingVersion(
         getProperty(hive_metastoreConstants.TABLE_BUCKETING_VERSION));
   }

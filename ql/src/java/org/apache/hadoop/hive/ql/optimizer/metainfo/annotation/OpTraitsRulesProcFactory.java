@@ -40,6 +40,8 @@ import org.apache.hadoop.hive.ql.parse.ParseContext;
 import org.apache.hadoop.hive.ql.parse.PrunedPartitionList;
 import org.apache.hadoop.hive.ql.parse.SemanticException;
 import org.apache.hadoop.hive.ql.plan.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /*
  * This class populates the following operator traits for the entire operator tree:
@@ -82,7 +84,7 @@ public class OpTraitsRulesProcFactory {
    * for determining keyCols (emit keys of a map phase)
    */
   public static class ReduceSinkRule implements NodeProcessor {
-
+    private static final Logger LOG = LoggerFactory.getLogger(ReduceSinkRule.class);
     @Override
     public Object process(Node nd, Stack<Node> stack, NodeProcessorCtx procCtx,
         Object... nodeOutputs) throws SemanticException {
@@ -99,7 +101,7 @@ public class OpTraitsRulesProcFactory {
         numReduceSinks += parentOpTraits.getNumReduceSinks();
         bucketingVersion = parentOpTraits.getBucketingVersion();
       }
-
+      LOG.info("BUCKETING-DEBUG-LOG-OpTraits-process-LOG:" + bucketingVersion);
       List<String> bucketCols = new ArrayList<>();
       if (parentOpTraits != null &&
               parentOpTraits.getBucketColNames() != null) {

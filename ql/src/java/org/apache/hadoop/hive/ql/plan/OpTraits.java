@@ -18,6 +18,9 @@
 
 package org.apache.hadoop.hive.ql.plan;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.List;
 
 public class OpTraits {

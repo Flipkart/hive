@@ -193,6 +193,7 @@ public abstract class AbstractRecordWriter implements RecordWriter {
     int bucketingVersion = Utilities.getBucketingVersion(
         tbl.getParameters().get(hive_metastoreConstants.TABLE_BUCKETING_VERSION));
 
+    LOG.info("BUCKETING-DEBUG-LOG-AbstractRecordWriter-getBucket-196-LOG:" + String.valueOf(bucketingVersion));
     return bucketingVersion == 2 ?
         ObjectInspectorUtils.getBucketNumber(bucketFields, inspectors, totalBuckets) :
         ObjectInspectorUtils.getBucketNumberOld(bucketFields, inspectors, totalBuckets);

@@ -665,6 +665,7 @@ public final class ObjectInspectorUtils {
       int fieldHash = ObjectInspectorUtils.hashCode(bucketFields[i], bucketFieldInspectors[i]);
       hashCode = 31 * hashCode + fieldHash;
     }
+    LOG.info("BUCKETING-DEBUG-LOG-ObjectInspectUtils-getBucketHashCodeOld-668-LOG:" + hashCode);
     return hashCode;
   }
 
@@ -789,16 +790,26 @@ public final class ObjectInspectorUtils {
 
   public static int getBucketHashCode(Object[] bucketFields, ObjectInspector[] bucketFieldInspectors) {
     int hashCode = 0;
+    LOG.info("BUCKETING-DEBUG-LOG-ObjectInspectorUtils-getBucketHashCode-793-LOG:" + hashCode);
     ByteBuffer b = ByteBuffer.allocate(8); // To be used with primitive types
     for (int i = 0; i < bucketFields.length; i++) {
       int fieldHash = ObjectInspectorUtils.hashCodeMurmur(
           bucketFields[i], bucketFieldInspectors[i], b);
       hashCode = 31 * hashCode + fieldHash;
     }
+    LOG.info("BUCKETING-DEBUG-LOG-ObjectInspectorUtils-getBucketHashCode-800-LOG:" + hashCode);
     return hashCode;
   }
 
   public static int hashCodeMurmur(Object o, ObjectInspector objIns, ByteBuffer byteBuffer) {
+    LOG.info("BUCKETING-DEBUG-LOG-ObjectInspectorUtils-hashCodeMurmur-805-LOG:" + o.toString());
+    //Throwable temp_throw = new Throwable();
+    //temp_throw.printStackTrace();
+    //Thread.currentThread().getStackTrace()
+    //Thread.currentThread().getStackTrace();
+    for (StackTraceElement element : Thread.currentThread().getStackTrace()) {
+      LOG.info("BUCKETING-DEBUG-LOG-ObjectInspectorUtils-hashCodeMurmur-811-LOG:" + element.toString());
+    }
     if (o == null) {
       return 0;
     }

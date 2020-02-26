@@ -1622,10 +1622,23 @@ public abstract class Operator<T extends OperatorDesc> implements Serializable,C
   }
 
   public void setBucketingVersion(int bucketingVersion) {
+    LOG.info("BUCKETING-DEBUG-LOG-Operator-setBucketingVersion-1625-LOG:" + bucketingVersion);
+    try{
+      if(bucketingVersion == 2){
+        for (StackTraceElement element : Thread.currentThread().getStackTrace()) {
+          LOG.info("BUCKETING-DEBUG-LOG-Operator-setBucketingVersion-1629-LOG:" + element.toString());
+        }
+        throw new HiveException("BUCKETING-DEBUG-ERROR!!!!!!!-----------------------");
+      }
+    } catch (HiveException e){
+      e.getMessage();
+      e.printStackTrace();
+    }
     this.bucketingVersion = bucketingVersion;
   }
 
   public int getBucketingVersion() {
+    LOG.info("BUCKETING-DEBUG-LOG-Operator-getBucketingVersion-1630-LOG:" + bucketingVersion);
     return bucketingVersion;
   }
 }

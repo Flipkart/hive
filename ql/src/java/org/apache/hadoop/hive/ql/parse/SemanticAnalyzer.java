@@ -11035,6 +11035,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
       }
 
       // Set the bucketing Version
+      LOG.info("BUCKETING-DEBUG-LOG-SemanticAnalyzer-genTablePlan-11038-LOG:" + tab.getBucketingVersion());
       top.setBucketingVersion(tsDesc.getTableMetadata().getBucketingVersion());
     } else {
       rwsch = opParseCtx.get(top).getRowResolver();
@@ -11103,6 +11104,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
         // input pruning is enough; add the filter for the optimizer to use it
         // later
         LOG.info("No need for sample filter");
+        LOG.info("BUCKETING-DEBUG-LOG-SemanticAnalyzer-genTablePlan-11107-LOG:" + tab.getBucketingVersion());
         ExprNodeDesc samplePredicate = genSamplePredicate(ts, tabBucketCols,
             colsEqual, alias, rwsch, qb.getMetaData(), null,
                 tab.getBucketingVersion());
@@ -11116,6 +11118,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
         // need to add filter
         // create tableOp to be filterDesc and set as child to 'top'
         LOG.info("Need sample filter");
+        LOG.info("BUCKETING-DEBUG-LOG-SemanticAnalyzer-genTablePlan-11121-LOG:" + tab.getBucketingVersion());
         ExprNodeDesc samplePredicate = genSamplePredicate(ts, tabBucketCols,
             colsEqual, alias, rwsch, qb.getMetaData(), null,
                 tab.getBucketingVersion());
@@ -11148,6 +11151,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
             TableSample tsSample = new TableSample(1, numBuckets);
             tsSample.setInputPruning(true);
             qb.getParseInfo().setTabSample(alias, tsSample);
+            LOG.info("BUCKETING-DEBUG-LOG-SemanticAnalyzer-genTablePlan-11154-LOG:" + tab.getBucketingVersion());
             ExprNodeDesc samplePred = genSamplePredicate(tsSample, tab
                 .getBucketCols(), true, alias, rwsch, qb.getMetaData(), null,
                     tab.getBucketingVersion());
@@ -11168,6 +11172,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
             ExprNodeDesc randFunc = TypeCheckProcFactory.DefaultExprProcessor
                 .getFuncExprNodeDesc("rand", new ExprNodeConstantDesc(Integer
                     .valueOf(460476415)));
+            LOG.info("BUCKETING-DEBUG-LOG-SemanticAnalyzer-genTablePlan-11174-LOG:" + tab.getBucketingVersion());
             ExprNodeDesc samplePred = genSamplePredicate(tsSample, null, false,
                 alias, rwsch, qb.getMetaData(), randFunc, tab.getBucketingVersion());
             FilterDesc filterDesc = new FilterDesc(samplePred, true);

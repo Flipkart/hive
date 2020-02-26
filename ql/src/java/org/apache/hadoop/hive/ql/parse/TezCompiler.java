@@ -1485,8 +1485,15 @@ public class TezCompiler extends TaskCompiler {
       if (rsOps.isEmpty()) {
         continue;
       }
+
+      for (Operator<? extends OperatorDesc> rsop : rsOps) {
+        LOG.info("BUCKETING-DEBUG-LOG-TezCompiler-updateBucketingVersionForUpgrade-1490-LOG:" + rsop.getBucketingVersion());
+        LOG.info("BUCKETING-DEBUG-LOG-TezCompiler-updateBucketingVersionForUpgrade-1491-LOG:" + rsop.toString());
+      }
+
       // Skip setting if the bucketing version is not set in FileSinkOp.
       if (fsOp.getConf().getTableInfo().isSetBucketingVersion()) {
+        LOG.info("BUCKETING-DEBUG-LOG-TezCompiler-updateBucketingVersionForUpgrade-1496-LOG:" + fsOp.getConf().getTableInfo().getBucketingVersion());
         rsOps.iterator().next().setBucketingVersion(fsOp.getConf().getTableInfo().getBucketingVersion());
       }
     }

@@ -4505,6 +4505,7 @@ public final class Utilities {
 
   // Get the bucketing version stored in the string format
   public static int getBucketingVersion(final String versionStr) {
+    LOG.info("BUCKETING-DEBUG-LOG-QL-Utilities-getBucketingVersion-4508-LOG:" + versionStr);
     int bucketingVersion = 1;
     if (versionStr != null) {
       try {

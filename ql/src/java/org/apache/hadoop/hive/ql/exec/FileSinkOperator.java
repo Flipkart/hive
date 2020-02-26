@@ -613,9 +613,14 @@ public class FileSinkOperator extends TerminalOperator<FileSinkDesc> implements
       statsMap.put(getCounterName(Counter.RECORDS_OUT), row_count);
 
       // Setup hashcode
+      LOG.info("BUCKETING-DEBUG-LOG-FileSinkOperator-initializeOp-616-LOG:" + String.valueOf(conf.getTableInfo().getBucketingVersion()));
+
       hashFunc = conf.getTableInfo().getBucketingVersion() == 2 ?
           ObjectInspectorUtils::getBucketHashCode :
           ObjectInspectorUtils::getBucketHashCodeOld;
+      LOG.info("BUCKETING-DEBUG-LOG-FileSinkOperator-initializeOp-621-LOG:" + hashFunc.toString());
+      LOG.info("BUCKETING-DEBUG-LOG-FileSinkOperator-initializeOp-622-LOG:" + conf.getTableInfo().getTableName());
+      LOG.info("BUCKETING-DEBUG-LOG-FileSinkOperator-initializeOp-623-LOG:" + conf.getTableInfo().getProperties().stringPropertyNames());
     } catch (HiveException e) {
       throw e;
     } catch (Exception e) {
