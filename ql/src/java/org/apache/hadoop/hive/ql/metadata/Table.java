@@ -181,6 +181,9 @@ public class Table implements Serializable {
       // set create time
       t.setCreateTime((int) (System.currentTimeMillis() / 1000));
     }
+    // Explictly set the bucketing version
+    t.getParameters().put("bucketing_version",
+            "2");
     return t;
   }
 
